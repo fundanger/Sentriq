@@ -6,9 +6,11 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { SeverityBadge } from "@/components/rules/severity-badge";
 import { LanguageBadge } from "@/components/rules/language-badge";
 import { StatusBadge } from "@/components/rules/status-badge";
+import { Download } from "lucide-react";
 import type { Severity, DetectionLanguage } from "@/lib/constants";
 
 interface RuleCardProps {
@@ -19,6 +21,7 @@ interface RuleCardProps {
   language: DetectionLanguage;
   status: string;
   categoryName?: string | null;
+  sourceProject?: string | null;
 }
 
 export function RuleCard({
@@ -29,6 +32,7 @@ export function RuleCard({
   language,
   status,
   categoryName,
+  sourceProject,
 }: RuleCardProps) {
   return (
     <Link href={`/rules/${slug}`}>
@@ -45,6 +49,12 @@ export function RuleCard({
           <SeverityBadge severity={severity} />
           <LanguageBadge language={language} />
           <StatusBadge status={status} />
+          {sourceProject && (
+            <Badge variant="outline" className="gap-1 text-muted-foreground">
+              <Download className="size-3" />
+              {sourceProject}
+            </Badge>
+          )}
           {categoryName && (
             <span className="ml-auto text-xs text-muted-foreground">
               {categoryName}

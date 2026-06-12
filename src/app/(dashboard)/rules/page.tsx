@@ -8,6 +8,7 @@ import { RuleCard } from "@/components/rules/rule-card";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -17,6 +18,22 @@ import { Plus } from "lucide-react";
 import type { DetectionLanguage, Severity } from "@/lib/constants";
 
 const PAGE_SIZE = 12;
+
+/** Returns a windowed page list with `"ellipsis"` markers, e.g. [1, "ellipsis", 4, 5, 6, "ellipsis", 277]. */
+function paginationRange(current: number, total: number): (number | "ellipsis")[] {
+  const delta = 2;
+  const range: (number | "ellipsis")[] = [];
+  const start = Math.max(2, current - delta);
+  const end = Math.min(total - 1, current + delta);
+
+  range.push(1);
+  if (start > 2) range.push("ellipsis");
+  for (let p = start; p <= end; p++) range.push(p);
+  if (end < total - 1) range.push("ellipsis");
+  if (total > 1) range.push(total);
+
+  return range;
+}
 
 interface RulesPageProps {
   searchParams: Promise<{
@@ -65,7 +82,7 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
       orderBy: (r, { desc }) => [desc(r.createdAt)],
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
-      with: { primaryCategory: true },
+      with: { primaryCategory: true, source: true },
     }),
     db.query.categories.findMany({
       orderBy: (c, { asc }) => [asc(c.sortOrder)],
@@ -125,6 +142,7 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
               language={rule.language}
               status={rule.status}
               categoryName={rule.primaryCategory?.name}
+              sourceProject={rule.source?.sourceProject}
             />
           ))}
         </div>
@@ -140,13 +158,19 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
                 className={page === 1 ? "pointer-events-none opacity-50" : ""}
               />
             </PaginationItem>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <PaginationItem key={p}>
-                <PaginationLink href={pageHref(p)} isActive={p === page}>
-                  {p}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
+            {paginationRange(page, totalPages).map((p, i) =>
+              p === "ellipsis" ? (
+                <PaginationItem key={`ellipsis-${i}`}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              ) : (
+                <PaginationItem key={p}>
+                  <PaginationLink href={pageHref(p)} isActive={p === page}>
+                    {p}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            )}
             <PaginationItem>
               <PaginationNext
                 href={pageHref(Math.min(totalPages, page + 1))}

@@ -51,6 +51,7 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
       mitreMappings: { with: { technique: true } },
       cveMappings: { with: { cve: true } },
       references: true,
+      source: true,
     },
   });
 
@@ -139,6 +140,52 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
               )}
             </CardContent>
           </Card>
+
+          {rule.source && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ExternalLink className="size-4 text-muted-foreground" />
+                  Source &amp; attribution
+                </CardTitle>
+                <CardDescription>
+                  This rule was imported from an upstream project and is redistributed under its license.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-1 text-sm">
+                <p>
+                  <span className="font-medium text-foreground">Source:</span>{" "}
+                  <Link
+                    href={rule.source.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 hover:underline"
+                  >
+                    {rule.source.sourceProject}
+                    <ExternalLink className="size-3" />
+                  </Link>
+                </p>
+                {rule.source.sourceAuthor && (
+                  <p>
+                    <span className="font-medium text-foreground">Original author:</span>{" "}
+                    {rule.source.sourceAuthor}
+                  </p>
+                )}
+                <p>
+                  <span className="font-medium text-foreground">License:</span>{" "}
+                  <Link
+                    href={rule.source.licenseUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 hover:underline"
+                  >
+                    {rule.source.licenseName}
+                    <ExternalLink className="size-3" />
+                  </Link>
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {rule.dataSourceRequirements && (
             <Card>
