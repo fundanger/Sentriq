@@ -93,7 +93,11 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <AskAiAboutRuleButton ruleSlug={rule.slug} ruleTitle={rule.title} />
+            <AskAiAboutRuleButton
+              ruleSlug={rule.slug}
+              ruleTitle={rule.title}
+              ruleLanguage={rule.language}
+            />
             <Button variant="outline" size="sm" render={<Link href={`/rules/${rule.slug}/edit`} />}>
               <Pencil />
               Edit

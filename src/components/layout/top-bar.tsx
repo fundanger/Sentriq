@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -60,15 +61,17 @@ export function TopBar({ session }: { session: Session }) {
             }
           />
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium">{displayName}</span>
-              <span className="text-xs text-muted-foreground">{email}</span>
-              {user?.role && (
-                <span className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
-                  {user.role}
-                </span>
-              )}
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">{displayName}</span>
+                <span className="text-xs text-muted-foreground">{email}</span>
+                {user?.role && (
+                  <span className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+                    {user.role}
+                  </span>
+                )}
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<a href="/settings/security" />}>
               <KeyRound />

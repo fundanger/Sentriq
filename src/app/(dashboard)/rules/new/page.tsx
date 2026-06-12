@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { db } from "@/db";
 import { Button } from "@/components/ui/button";
-import { RuleForm } from "@/components/rules/rule-form";
-import { createRuleAction } from "@/actions/rules";
+import { NewRuleForm } from "@/components/rules/new-rule-form";
 import { ArrowLeft } from "lucide-react";
 
 export default async function NewRulePage() {
@@ -27,18 +26,13 @@ export default async function NewRulePage() {
             New detection rule
           </h1>
           <p className="text-sm text-muted-foreground">
-            Author a new rule manually, or use the AI assistant later to draft
-            one from a description.
+            Author a new rule manually, or describe the threat behavior and
+            let the AI assistant draft one for you to review and edit.
           </p>
         </div>
       </div>
 
-      <RuleForm
-        action={createRuleAction}
-        categories={categories}
-        mitreTechniques={mitreTechniques}
-        submitLabel="Create rule"
-      />
+      <NewRuleForm categories={categories} mitreTechniques={mitreTechniques} />
     </div>
   );
 }
