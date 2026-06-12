@@ -5,17 +5,39 @@ that are out of scope for now but worth revisiting. Not prioritized.
 
 ## Additional rule sources
 
-- **Elastic detection rules** (`elastic/detection-rules`, Elastic License 2.0 /
-  partially Apache-2.0 depending on file) — implement as a new importer module
-  registered in `src/db/seed/importers/registry.ts`, following the Sigma
-  importer's shape. Check per-file license headers before import.
-- **Splunk security content** (`splunk/security_content`, mostly
-  Apache-2.0/Splunk specific) — same pattern.
-- **YARA rules** (e.g. `Yara-Rules/rules`, mixed licenses — verify per-repo
-  before import) — would need a new `language: yara` rule shape; most YARA
-  rule sets target malware family detection rather than the
-  category/MITRE-tactic taxonomy used here, so category-mapping heuristics
-  will need their own pass.
+**Licensing policy**: only import from sources that are ethically licensed,
+open, and free for commercial use with redistribution-with-attribution
+(e.g. Apache-2.0, MIT, DRL-1.1). The `rule_sources` table + per-rule
+"Source & attribution" card on the detail page exist specifically to satisfy
+attribution requirements for these licenses.
+
+- **DONE — Splunk security content** (`splunk/security_content`,
+  Apache-2.0) — imported via `src/db/seed/importers/splunk.ts`
+  (`npm run db:import -- splunk`), 2,056 rules from `detections/` across
+  application/cloud/endpoint/network/web. Category mapped via MITRE
+  tactic-of-technique lookup (falls back to `security_domain`/`category`).
+  All rules default to `medium` severity (upstream schema has no
+  severity/risk field) — revisit if a better signal is found later.
+- **NEXT — Azure/Azure-Sentinel Analytic Rules** (`Azure/Azure-Sentinel`,
+  MIT) — strong KQL source (current `kql` count is only 14). 2,116
+  `Solutions/*/Analytic Rules/*.yaml` files enumerated via the GitHub
+  git-trees recursive API (repo itself is ~14.6GB, too large to clone;
+  fetch each file individually via `raw.githubusercontent.com`). Schema has
+  clean `tactics` (ATT&CK tactic names directly) and `relevantTechniques`
+  (T#### IDs) fields — category/MITRE mapping should be more accurate than
+  Sigma/Splunk's indirect lookups. Implement as
+  `src/db/seed/importers/azure-sentinel.ts`, registry id `azure-sentinel`.
+- **EXCLUDED — Elastic detection rules** (`elastic/detection-rules`, Elastic
+  License 2.0) — ELv2's anti-managed-service clause conflicts with the
+  "free for commercial use" policy above. Not importing.
+- **EXCLUDED — YARA rule corpora** (e.g. `Yara-Rules/rules`, GPLv2;
+  `elastic/protections-artifacts`, NOASSERTION; most other YARA repos are
+  tooling/generators, not corpora, or have no clear license) — no
+  permissively-licensed YARA rule corpus of meaningful scale was found.
+  Revisit if one surfaces later.
+- **No viable source found — Cloudflare WAF rules** — GitHub search turned
+  up only automation/tooling repos (IP blockers, bot-detection workers), not
+  rule corpora. Revisit if one surfaces later.
 - Sigma category-mapping heuristic is heavily skewed: ~1,440 of ~3,300
   imported rules landed in "Insider Threat & Anomalous Behavior" (the
   fallback bucket) and "Initial Access" has zero rules. Revisit the
@@ -27,7 +49,8 @@ that are out of scope for now but worth revisiting. Not prioritized.
   periodic re-import job or at least a documented manual cadence, plus a
   "what changed since last import" digest (diff on `rule_sources.sourceUrl` +
   content hash) so updates can be reviewed before overwriting local edits to
-  imported rules.
+  imported rules. Same applies to Splunk's `develop` branch and any future
+  Azure-Sentinel import.
 
 ## Search & performance
 
