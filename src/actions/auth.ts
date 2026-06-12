@@ -4,10 +4,12 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { AuthError } from "next-auth";
 import { signIn, signOut, auth } from "@/lib/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
+import { rateLimit } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -29,6 +31,20 @@ export async function loginAction(
 
   if (!parsed.success) {
     return { error: "Please enter a valid email and password." };
+  }
+
+  const requestHeaders = await headers();
+  const ip = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? requestHeaders.get("x-real-ip")
+    ?? "unknown";
+
+  const ipLimit = rateLimit(`login:ip:${ip}`, { limit: 20, windowMs: 5 * 60_000 });
+  const emailLimit = rateLimit(`login:email:${parsed.data.email.toLowerCase()}`, {
+    limit: 5,
+    windowMs: 5 * 60_000,
+  });
+  if (!ipLimit.allowed || !emailLimit.allowed) {
+    return { error: "Too many login attempts. Please wait a few minutes and try again." };
   }
 
   try {

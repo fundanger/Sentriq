@@ -1,0 +1,16 @@
+services:
+  sentriq:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_PATH: /app/data/sentriq.db
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL:-}
+    volumes:
+      - sentriq-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  sentriq-data:

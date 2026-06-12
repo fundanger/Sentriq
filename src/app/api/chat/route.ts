@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { detectionRules } from "@/db/schema";
 import { getActiveLlmProvider } from "@/lib/ai/provider";
 import { searchSimilarRules } from "@/lib/ai/rag";
+import { rateLimit } from "@/lib/rate-limit";
 import type { PlatformContext, PlatformRuleContext } from "@/lib/ai/types";
 
 const requestSchema = z.object({
@@ -21,6 +22,17 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return new Response("Unauthorized", { status: 401 });
+  }
+
+  const { allowed, retryAfterSeconds } = rateLimit(`chat:${session.user.id}`, {
+    limit: 20,
+    windowMs: 60_000,
+  });
+  if (!allowed) {
+    return new Response("Too many requests. Please slow down.", {
+      status: 429,
+      headers: { "Retry-After": String(retryAfterSeconds) },
+    });
   }
 
   const body = await req.json();

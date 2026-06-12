@@ -84,6 +84,34 @@ npm run db:embed
 
 to generate embeddings for the seed rule library so RAG search returns results immediately.
 
+## Deploying with Docker
+
+Sentriq ships with a multi-stage `Dockerfile` and `docker-compose.yml` for running as a single self-contained container — suitable for local hosting or a public-facing deployment on a VPS, Fly.io, Railway, etc. The SQLite database lives on a persistent volume (`sentriq-data`).
+
+1. Create `.env.local` from `.env.example` and fill in `ENCRYPTION_KEY` and `AUTH_SECRET` (see above). For a public deployment, also set `AUTH_URL` to your public URL (e.g. `https://sentriq.example.com`).
+
+2. Build and start the container:
+
+   ```bash
+   docker compose --env-file .env.local up -d --build
+   ```
+
+3. Initialize the database (first run only — runs inside the container against the persistent volume):
+
+   ```bash
+   docker compose exec sentriq npm run db:push
+   docker compose exec sentriq npm run db:seed
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) (or your configured `AUTH_URL`).
+
+### Production hardening notes
+
+- **Change the break-glass admin password immediately** — the forced first-run flow handles this, but don't leave a freshly seeded instance reachable on the public internet before logging in.
+- **Put the container behind HTTPS** (a reverse proxy like Caddy, Traefik, or nginx, or your hosting platform's built-in TLS termination). `trustHost` is enabled so Auth.js will trust the proxy's forwarded host/protocol headers.
+- **Back up the `sentriq-data` volume** — it contains the SQLite database (rules, users, encrypted API keys).
+- Login and AI chat endpoints are rate-limited per-IP/per-user out of the box (in-memory, suitable for a single instance).
+
 ## Scripts
 
 | Command | Description |
