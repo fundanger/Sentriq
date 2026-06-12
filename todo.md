@@ -52,9 +52,40 @@ attribution requirements for these licenses.
   `T####`/`T####.###` tags; severity from `priority`
   (CRITICAL/ERROR/WARNING/NOTICE/INFO → critical/high/medium/low/informational);
   `enabled: false` rules marked `experimental`.
-- **No viable source found — Cloudflare WAF rules** — GitHub search turned
-  up only automation/tooling repos (IP blockers, bot-detection workers), not
-  rule corpora. Revisit if one surfaces later.
+- **DONE — Cloudflare WAF rules** (`mintyYuki/cf-waf-ruleset`, MIT) — small
+  (4 rules) but real corpus of monolithic WAF custom-rule expressions.
+  Imported via `src/db/seed/importers/cloudflare.ts`
+  (`npm run db:import -- cloudflare`), `cloudflare` count went from 4 to 8.
+  Each non-empty file (`BasicSecurity.txt`, `AntiExploit.txt`,
+  `AdvancedSecurity-1.txt`, `AdvancedSecurity-2.txt` — `-3` is empty,
+  skipped) becomes one rule; category/severity/description hand-mapped per
+  file in `RULE_DEFS` since the upstream files carry no metadata beyond the
+  raw Wirefilter expression.
+- **DONE — YARA rules** (`0xN0n4m3d3v/kit-shell`, CC0-1.0/public domain) — 53
+  well-formed YARA rules (webshells, hacktools, infostealers, ransomware,
+  generic malware) with `meta.description`/`severity`/`mitre` fields.
+  Imported via `src/db/seed/importers/yara.ts` (`npm run db:import -- yara`),
+  `yara` count went from 4 to 57. Parser splits each `.yar` file into
+  top-level `rule NAME { ... }` blocks via brace-matching (no YAML/JSON
+  structure to lean on). Category mapped from filename (hacktool ->
+  defense-evasion, infostealers -> credential-access, ransomware/
+  malware_generic -> ransomware, webshells -> persistence); MITRE ID from
+  `meta.mitre` (single technique per rule, when present).
+- **DONE — Hand-authored Elastic + SentinelOne rules** — both languages had
+  only 3 first-party rules with no compliant import source found (Elastic:
+  ELv2 repo-wide; SentinelOne: no official corpus, community repos are
+  GPL/LGPL/unlicensed). Added 2 new variants each as siblings to existing
+  rule families (no `rule_sources` row — first-party Sentriq content):
+  - `rule-password-spray-s1` (SentinelOne STAR/Singularity Identity) added
+    to `fam-password-spray` in `credentialAccess.ts`.
+  - `rule-mfa-fatigue-s1` (SentinelOne STAR/Singularity Identity) added to
+    `fam-mfa-fatigue` in `cloudSaas.ts`.
+  - `rule-dns-tunneling-elastic` (Elastic ES|QL) added to
+    `fam-dns-tunneling` in `reconAndC2.ts`.
+  - `rule-generic-sqli-elastic` (Elastic ES|QL) added to `fam-generic-sqli`
+    in `webAttacks.ts`.
+  Elastic and SentinelOne both went from 3 to 5 rules. Re-run
+  `npm run db:seed` (idempotent) to apply.
 - **Reference-only, not importable as rules — MITRE CAR**
   (`mitre-attack/car`, Apache-2.0) and **Atomic Red Team**
   (`redcanaryco/atomic-red-team`, MIT) — CAR is "analytics" (pseudocode +

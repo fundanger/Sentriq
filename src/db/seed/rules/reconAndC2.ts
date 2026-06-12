@@ -242,6 +242,50 @@ record_type IN ("TXT", "NULL", "A")
           },
         ],
       },
+      {
+        id: "rule-dns-tunneling-elastic",
+        language: "elastic",
+        platformVariant: "ES|QL (Detection Rule)",
+        title: "DNS Tunneling - High Cardinality of Subdomains Queried per Registered Domain",
+        slug: "dns-tunneling-high-subdomain-cardinality-elastic",
+        descriptionSummary:
+          "ES|QL rule over dns.* events that aggregates distinct subdomain labels queried per (source host, registered domain) within a 10-minute bucket, flagging the same volumetric pattern as the Sigma/SPL variants for Elastic-native DNS telemetry.",
+        ruleBody: `// Elastic Security Detection Rule - ES|QL
+// Index pattern: logs-*, packetbeat-*, filebeat-*.dns
+// Requires dns.question.name and dns.question.registered_domain
+// (the latter is populated by the dns processor / Elastic Common Schema enrichment)
+
+FROM logs-*
+| WHERE event.category == "network" AND event.dataset LIKE "*dns*"
+| WHERE dns.question.type IN ("A", "TXT", "CNAME", "NULL")
+| EVAL bucket = DATE_TRUNC(10 minutes, @timestamp)
+| STATS
+    distinct_subdomains = COUNT_DISTINCT(dns.question.name),
+    total_queries = COUNT(*),
+    record_types = VALUES(dns.question.type)
+    BY source.ip, dns.question.registered_domain, bucket
+| WHERE distinct_subdomains > 50
+| SORT distinct_subdomains DESC`,
+        ruleFormatVersion: "Elastic Security Detection Rule (ES|QL)",
+        severity: "high",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "Identical false-positive profile to the Sigma/SPL variants: CDNs, cloud load balancers, and analytics/telemetry SDKs that legitimately generate large numbers of distinct subdomains under one parent domain. Maintain an exceptions list on `dns.question.registered_domain` for known high-cardinality-subdomain services identified during a baseline period. `dns.question.registered_domain` requires the Elastic Common Schema DNS enrichment (via the `registered_domain` processor or an integration that populates it, such as Packetbeat's DNS module) - if absent, derive it with a `GROK`/`DISSECT` step on `dns.question.name` before aggregating.",
+        dataSourceRequirements:
+          "Elastic Agent with the DNS integration (Packetbeat DNS module or equivalent) populating `dns.question.name`, `dns.question.type`, and `dns.question.registered_domain`. ES|QL rules require Elastic Stack 8.11+.",
+        mitreTechniqueIds: ["T1071.004", "T1048"],
+        cveIds: [],
+        tags: ["DNS Tunneling", "C2", "ES|QL"],
+        references: [
+          {
+            url: "https://attack.mitre.org/techniques/T1071/004/",
+            title: "MITRE ATT&CK - DNS",
+            referenceType: "mitre_page",
+          },
+        ],
+      },
     ],
   },
 

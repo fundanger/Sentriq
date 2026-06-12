@@ -435,6 +435,58 @@ index=wineventlog sourcetype="WinEventLog:Security" EventCode=4625
           },
         ],
       },
+      {
+        id: "rule-password-spray-s1",
+        language: "sentinelone",
+        platformVariant: "STAR Rule / Singularity Identity",
+        title: "Password Spray Pattern Against Many Distinct Accounts from Single Source",
+        slug: "password-spraying-distinct-accounts-s1",
+        descriptionSummary:
+          "STAR rule over SentinelOne Singularity Identity / cloud-IdP login event data, flagging a single source IP generating failed authentications against an unusually high number of distinct usernames within a 30-minute window.",
+        ruleBody: `// SentinelOne STAR Rule - Singularity Identity / IdP Login Events
+// Detects a single source IP failing authentication against many distinct
+// user accounts within a 30-minute window (password spraying).
+//
+// Source: identity provider login events ingested via SentinelOne's
+// Identity connector (e.g., Okta, Entra ID, Active Directory) or the
+// equivalent Deep Visibility "Login" event class for domain-joined endpoints.
+
+event.category = "Login"
+AND event.type = "Login Failure"
+
+| group
+    distinct_accounts = count_distinct(user.name),
+    total_failures = count(),
+    targeted_accounts = values(user.name)
+    by src.ip.address, timeperiod(30m)
+
+| filter distinct_accounts > 15
+
+| eval severity = case(
+    distinct_accounts > 50, "critical",
+    distinct_accounts > 30, "high",
+    true(), "medium"
+)`,
+        ruleFormatVersion: "STAR Rule (Deep Visibility Query Language)",
+        severity: "high",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "As with the Sigma/SPL variants, shared corporate VPN/NAT egress IPs are the dominant false-positive source for IP-based grouping - maintain an allow-list of known shared-egress addresses and either exclude them or apply a substantially higher threshold. If your IdP integration provides a `client.geo.asn` or similar field, consider grouping by ASN in addition to IP to catch distributed spraying from a single hosting provider's IP range. A successful login (`event.type = \"Login Success\"`) from the same source shortly after the failure spike should be correlated separately and treated as a high-confidence compromise indicator.",
+        dataSourceRequirements:
+          "SentinelOne Singularity Identity with a configured IdP connector (Okta, Entra ID, AD FS), or Deep Visibility Login events for domain-joined endpoints. STAR rules require an Enterprise/Complete tier license.",
+        mitreTechniqueIds: ["T1110.003"],
+        cveIds: [],
+        tags: ["Brute Force", "Authentication", "Identity", "EDR"],
+        references: [
+          {
+            url: "https://attack.mitre.org/techniques/T1110/003/",
+            title: "MITRE ATT&CK - Password Spraying",
+            referenceType: "mitre_page",
+          },
+        ],
+      },
     ],
   },
 

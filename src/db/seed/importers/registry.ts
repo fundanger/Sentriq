@@ -3,6 +3,8 @@ import { sigmaImporter } from "./sigma";
 import { splunkImporter } from "./splunk";
 import { azureSentinelImporter } from "./azure-sentinel";
 import { falcoImporter } from "./falco";
+import { yaraImporter } from "./yara";
+import { cloudflareImporter } from "./cloudflare";
 
 /**
  * All registered rule importers, keyed by their `id` (the CLI argument for
@@ -15,4 +17,6 @@ export const importerRegistry: Record<string, RuleImporter> = {
   [splunkImporter.id]: splunkImporter,
   [azureSentinelImporter.id]: azureSentinelImporter,
   [falcoImporter.id]: falcoImporter,
+  [yaraImporter.id]: yaraImporter,
+  [cloudflareImporter.id]: cloudflareImporter,
 };

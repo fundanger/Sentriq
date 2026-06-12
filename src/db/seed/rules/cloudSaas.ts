@@ -146,6 +146,62 @@ SigninLogs
           },
         ],
       },
+      {
+        id: "rule-mfa-fatigue-s1",
+        language: "sentinelone",
+        platformVariant: "STAR Rule / Singularity Identity",
+        title: "MFA Fatigue - High Volume of Push Prompts with Denial-Then-Approval Pattern",
+        slug: "mfa-fatigue-high-volume-prompts-s1",
+        descriptionSummary:
+          "STAR rule over Singularity Identity MFA challenge events, counting push notification prompts per user within a 15-minute window and flagging the high-confidence denial-then-approval sequence characteristic of MFA fatigue attacks.",
+        ruleBody: `// SentinelOne STAR Rule - Singularity Identity / IdP MFA Events
+// Detects a single user receiving an abnormally high number of MFA push
+// challenges within a 15-minute window, with extra weight given to a
+// denial(s)-then-approval sequence (push bombing).
+//
+// Source: MFA challenge events ingested via SentinelOne's Identity
+// connector (Okta, Entra ID, Duo, Ping, etc.).
+
+event.category = "MFA"
+AND event.type = "Challenge"
+AND mfa.method = "Push Notification"
+
+| group
+    prompt_count = count(),
+    denial_count = count_if(mfa.result = "Denied" OR mfa.result = "Timeout"),
+    approval_count = count_if(mfa.result = "Approved"),
+    src_ips = values(src.ip.address),
+    devices = values(device.id)
+    by user.name, timeperiod(15m)
+
+| filter prompt_count >= 5
+
+| eval suspicious_pattern = (denial_count >= 3 AND approval_count >= 1)
+| eval severity = case(
+    suspicious_pattern, "critical",
+    prompt_count >= 5, "high",
+    true(), "medium"
+)`,
+        ruleFormatVersion: "STAR Rule (Deep Visibility Query Language)",
+        severity: "high",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "Same profile as the KQL/Entra ID variant: users with unreliable connectivity may generate 2-4 retried prompts, below the threshold of 5. The `suspicious_pattern` flag (multiple denials followed by an approval) is the higher-confidence signal and should drive paging/critical alerting; raw prompt-count breaches alone may warrant only a lower-priority queue item for review. As with the KQL variant, response to a fired alert should include contacting the affected user via an out-of-band channel to confirm whether they recognize the activity.",
+        dataSourceRequirements:
+          "SentinelOne Singularity Identity with a configured IdP connector exposing MFA challenge/result events (Okta, Entra ID, Duo, or Ping). STAR rules require an Enterprise/Complete tier license.",
+        mitreTechniqueIds: ["T1621", "T1078"],
+        cveIds: [],
+        tags: ["MFA Fatigue", "Push Bombing", "Identity", "EDR"],
+        references: [
+          {
+            url: "https://attack.mitre.org/techniques/T1621/",
+            title: "MITRE ATT&CK - Multi-Factor Authentication Request Generation",
+            referenceType: "mitre_page",
+          },
+        ],
+      },
     ],
   },
 

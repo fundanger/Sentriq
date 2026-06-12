@@ -528,6 +528,55 @@ and not (ip.src in $known_scanner_allowlist)`,
           },
         ],
       },
+      {
+        id: "rule-generic-sqli-elastic",
+        language: "elastic",
+        platformVariant: "ES|QL (Detection Rule)",
+        title: "SQL Injection Patterns in Web Server Access Logs",
+        slug: "generic-sqli-patterns-elastic",
+        descriptionSummary:
+          "ES|QL rule over HTTP access log events (url.query / url.original) matching UNION-based, boolean, time-based, and stacked-query SQL injection patterns - the same heuristic set as the Cloudflare WAF variant, applied to Elastic-ingested web server logs.",
+        ruleBody: `// Elastic Security Detection Rule - ES|QL
+// Index pattern: logs-nginx.access-*, logs-apache.access-*, filebeat-*
+// Matches the same heuristic families as the Cloudflare WAF variant of this
+// rule family: UNION-based, boolean/auth-bypass, time-based blind, and
+// stacked-query / comment-termination SQL injection patterns.
+
+FROM logs-*
+| WHERE event.category == "web" AND event.dataset LIKE "*access*"
+| WHERE
+    url.original RLIKE "(?i).*union(\\\\s|/\\\\*.*\\\\*/|%20|\\\\+)+select.*"
+    OR url.original RLIKE "(?i).*('|%27)(\\\\s|%20)*(or|and)(\\\\s|%20)+('|%27)?(\\\\s|%20)*[0-9a-z]+(\\\\s|%20)*=(\\\\s|%20)*[0-9a-z]+.*"
+    OR url.original RLIKE "(?i).*(sleep\\\\(\\\\s*[0-9]|benchmark\\\\(|waitfor(\\\\s)+delay).*"
+    OR url.original RLIKE "(?i).*;(\\\\s)*(drop|alter|truncate|insert|update|delete)(\\\\s)+(table|into|from).*"
+    OR url.original LIKE "*/*!*"
+    OR url.original LIKE "*-- *"
+| STATS
+    request_count = COUNT(*),
+    sample_uris = VALUES(url.original)
+    BY source.ip, url.path, http.response.status_code
+| WHERE request_count > 0
+| SORT request_count DESC`,
+        ruleFormatVersion: "Elastic Security Detection Rule (ES|QL)",
+        severity: "high",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "Identical false-positive profile to the Cloudflare WAF variant: the boolean-based pattern can occasionally match legitimate free-text search/comment fields passed as query parameters. Start with this rule in a detection-only (no auto-response) configuration and review matches for 1-2 weeks before wiring to an automated block (e.g., via a SOAR playbook that adds the source IP to a firewall blocklist). The time-based and stacked-query patterns have very low false-positive rates. If `url.original` is not populated by your ingest pipeline, use `url.query` instead and adjust patterns accordingly (it will not include the path component).",
+        dataSourceRequirements:
+          "Elastic Agent with a web server integration (Nginx, Apache, IIS) populating `url.original`, `source.ip`, `url.path`, and `http.response.status_code` per Elastic Common Schema. ES|QL rules require Elastic Stack 8.11+.",
+        mitreTechniqueIds: ["T1190"],
+        cveIds: [],
+        tags: ["SQL Injection", "ES|QL", "OWASP Top 10"],
+        references: [
+          {
+            url: "https://owasp.org/www-community/attacks/SQL_Injection",
+            title: "OWASP - SQL Injection",
+            referenceType: "documentation",
+          },
+        ],
+      },
     ],
   },
 
