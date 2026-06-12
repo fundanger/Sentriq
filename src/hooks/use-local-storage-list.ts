@@ -14,11 +14,24 @@ export function notifyLocalStorageListChange() {
 
 const EMPTY: never[] = [];
 
+// Cached snapshots per `read` function, so `getSnapshot` returns a stable
+// reference until `notifyLocalStorageListChange` signals a real change.
+const snapshotCache = new WeakMap<() => unknown[], { json: string; value: unknown[] }>();
+
 /** Reads a localStorage-backed list, returning `[]` during SSR/hydration and the live value after mount. */
 export function useLocalStorageList<T>(read: () => T[]): T[] {
   return useSyncExternalStore(
     subscribe,
-    read,
+    () => {
+      const value = read();
+      const json = JSON.stringify(value);
+      const cached = snapshotCache.get(read);
+      if (cached && cached.json === json) {
+        return cached.value as T[];
+      }
+      snapshotCache.set(read, { json, value });
+      return value;
+    },
     () => EMPTY as T[]
   );
 }
