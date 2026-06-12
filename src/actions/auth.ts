@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
-import { signIn, auth } from "@/lib/auth";
+import { signIn, signOut, auth } from "@/lib/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 
@@ -86,4 +86,8 @@ export async function changePasswordAction(
     .where(eq(users.id, session.user.id));
 
   return {};
+}
+
+export async function signOutAction() {
+  await signOut({ redirectTo: "/login" });
 }
