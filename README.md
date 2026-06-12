@@ -74,6 +74,24 @@ The seed script creates a break-glass admin account:
 
 You'll be forced to set a new password on first login.
 
+### Importing additional rule sources
+
+Beyond the seeded rule library, Sentriq can bulk-import rules from third-party repositories via a pluggable importer framework (`src/db/seed/importers/`). The first importer pulls the full [SigmaHQ/sigma](https://github.com/SigmaHQ/sigma) ruleset (~3,000+ rules, `rules/` + `rules-threat-hunting/`):
+
+```bash
+npm run db:import -- sigma
+```
+
+Pass `--include-emerging` to also import `rules-emerging-threats/` and `rules-compliance/` (these update frequently upstream — re-run periodically to pick up changes). The import is idempotent: re-running it skips rules already present. Imported rules show a "Source & attribution" block on their detail page crediting the upstream project, original author, and license (Sigma rules are under SigmaHQ's Detection Rule License 1.1).
+
+For a Docker deployment, run the import inside the container against the persistent volume:
+
+```bash
+docker compose exec sentriq npm run db:import -- sigma
+```
+
+To add a new rule source, implement the `RuleImporter` interface in a new module under `src/db/seed/importers/` and register it in `registry.ts` — the shared runner handles idempotent inserts, MITRE technique pre-seeding, and attribution tracking.
+
 ### AI features
 
 AI chat, rule explanation/tuning, generation, and RAG search require an LLM provider key. Configure one under **Settings → AI** with any supported provider (Anthropic, OpenAI, Gemini, DeepSeek, or an OpenAI-compatible endpoint). After saving a key, run:
@@ -82,7 +100,7 @@ AI chat, rule explanation/tuning, generation, and RAG search require an LLM prov
 npm run db:embed
 ```
 
-to generate embeddings for the seed rule library so RAG search returns results immediately.
+to generate embeddings for the rule library so RAG search returns results immediately. The script runs with bounded concurrency and retries on rate limits, and is resumable — it only embeds rules that don't yet have an embedding. With the full Sigma import (~3,300 rules total), this will take a while and consume API credits; RAG search degrades gracefully (falls back to fewer/no matches) for rules that aren't yet embedded. Pass `--force` to re-embed every rule (e.g. after switching embedding models).
 
 ## Deploying with Docker
 
@@ -123,7 +141,8 @@ Sentriq ships with a multi-stage `Dockerfile` and `docker-compose.yml` for runni
 | `npm run db:generate` | Generate Drizzle migrations from schema changes |
 | `npm run db:push` | Push the current schema to the SQLite database |
 | `npm run db:seed` | Seed categories, MITRE techniques, CVEs, and the rule library |
-| `npm run db:embed` | Generate RAG embeddings for all rules (requires a configured AI provider) |
+| `npm run db:import -- <id>` | Bulk-import rules from a registered source (e.g. `sigma`) |
+| `npm run db:embed` | Generate RAG embeddings for rules missing one (requires a configured AI provider; `--force` re-embeds all) |
 
 ## Project structure
 
