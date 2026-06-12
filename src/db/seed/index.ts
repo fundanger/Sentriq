@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { db } from "../index";
 import {
   categories,
@@ -10,6 +11,7 @@ import {
   ruleReferences,
   ruleFamilies,
   detectionRules,
+  users,
 } from "../schema";
 import { categorySeeds } from "./categories";
 import { mitreTechniqueSeeds, mitreReferenceUrl } from "./mitre";
@@ -195,6 +197,30 @@ async function seedRuleFamiliesAndVariants(tagIdByName: Map<string, string>) {
   console.log(`Seeded ${allRuleSeeds.length} rule families / ${totalVariants} detection rule variants.`);
 }
 
+async function seedBreakGlassAdmin() {
+  const email = "admin@sentriq.local";
+  const existing = await db.query.users.findFirst({
+    where: (u, { eq }) => eq(u.email, email),
+  });
+  if (existing) {
+    console.log("Break-glass admin already exists, skipping.");
+    return;
+  }
+
+  console.log("Seeding break-glass admin account (admin@sentriq.local / password)...");
+  const passwordHash = await bcrypt.hash("password", 10);
+  await db.insert(users).values({
+    id: crypto.randomUUID(),
+    email,
+    name: "Break-Glass Admin",
+    passwordHash,
+    role: "admin",
+    isBreakGlass: true,
+    mustChangePassword: true,
+    createdAt: new Date(),
+  });
+}
+
 async function main() {
   console.log("Starting Sentriq database seed...");
 
@@ -203,6 +229,7 @@ async function main() {
   await seedCves();
   const tagIdByName = await seedTags();
   await seedRuleFamiliesAndVariants(tagIdByName);
+  await seedBreakGlassAdmin();
 
   console.log("Seed complete.");
 }
