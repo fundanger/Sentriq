@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Bookmark, BookmarkPlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,25 +24,21 @@ import {
   deleteFilterPreset,
   type FilterPreset,
 } from "@/lib/filter-presets";
+import { useLocalStorageList } from "@/hooks/use-local-storage-list";
 
 export function FilterPresets({ hasFilters }: { hasFilters: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [presets, setPresets] = useState<FilterPreset[]>([]);
+  const presets = useLocalStorageList(getFilterPresets);
   const [name, setName] = useState("");
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    setPresets(getFilterPresets());
-  }, []);
 
   function handleSave() {
     const trimmed = name.trim();
     if (!trimmed) return;
     saveFilterPreset({ name: trimmed, query: searchParams.toString() });
-    setPresets(getFilterPresets());
     setName("");
     setOpen(false);
   }
@@ -53,7 +49,6 @@ export function FilterPresets({ hasFilters }: { hasFilters: boolean }) {
 
   function handleDelete(presetName: string) {
     deleteFilterPreset(presetName);
-    setPresets(getFilterPresets());
   }
 
   return (

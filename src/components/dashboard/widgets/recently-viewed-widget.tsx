@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
@@ -13,14 +12,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { SEVERITY_BADGE_VARIANTS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { getRecentlyViewedRules, type RecentlyViewedRule } from "@/lib/recently-viewed";
+import { getRecentlyViewedRules } from "@/lib/recently-viewed";
+import { useLocalStorageList } from "@/hooks/use-local-storage-list";
 
 export function RecentlyViewedWidget() {
-  const [rules, setRules] = useState<RecentlyViewedRule[]>([]);
-
-  useEffect(() => {
-    setRules(getRecentlyViewedRules());
-  }, []);
+  const rules = useLocalStorageList(getRecentlyViewedRules);
 
   return (
     <Card className="h-full">

@@ -1,4 +1,5 @@
 import type { DetectionLanguage, Severity } from "@/lib/constants";
+import { notifyLocalStorageListChange } from "@/hooks/use-local-storage-list";
 
 export interface RecentlyViewedRule {
   slug: string;
@@ -33,6 +34,7 @@ export function recordRecentlyViewedRule(rule: Omit<RecentlyViewedRule, "viewedA
 
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    notifyLocalStorageListChange();
   } catch {
     // localStorage unavailable (e.g. private browsing quota) - skip silently.
   }

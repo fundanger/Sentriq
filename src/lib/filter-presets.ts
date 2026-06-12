@@ -1,3 +1,5 @@
+import { notifyLocalStorageListChange } from "@/hooks/use-local-storage-list";
+
 export interface FilterPreset {
   name: string;
   query: string;
@@ -27,6 +29,7 @@ export function saveFilterPreset(preset: FilterPreset): void {
 
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    notifyLocalStorageListChange();
   } catch {
     // localStorage unavailable (e.g. private browsing quota) - skip silently.
   }
@@ -39,6 +42,7 @@ export function deleteFilterPreset(name: string): void {
 
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    notifyLocalStorageListChange();
   } catch {
     // localStorage unavailable (e.g. private browsing quota) - skip silently.
   }

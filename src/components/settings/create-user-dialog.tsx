@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,11 +39,13 @@ export function CreateUserDialog() {
     FormData
   >(createUserAction, undefined);
 
-  useEffect(() => {
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
     if (state?.success) {
       setOpen(false);
     }
-  }, [state]);
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

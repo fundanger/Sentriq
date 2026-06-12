@@ -13,7 +13,7 @@ import {
   ruleSources,
 } from "../../schema";
 import { mitreReferenceUrl } from "../mitre";
-import type { ImportedRuleRecord, ImporterOptions, RuleImporter } from "./types";
+import type { ImporterOptions, RuleImporter } from "./types";
 
 function slugify(value: string): string {
   return value

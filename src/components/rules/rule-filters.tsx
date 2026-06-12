@@ -44,12 +44,14 @@ export function RuleFilters({ categories }: { categories: Category[] }) {
   const search = searchParams.get("q") ?? "";
 
   const [searchInput, setSearchInput] = useState(search);
+  const [prevSearch, setPrevSearch] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep the input in sync if the URL changes externally (e.g. "Clear").
-  useEffect(() => {
+  if (search !== prevSearch) {
+    setPrevSearch(search);
     setSearchInput(search);
-  }, [search]);
+  }
 
   useEffect(() => {
     return () => {

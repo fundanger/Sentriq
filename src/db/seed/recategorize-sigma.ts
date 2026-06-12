@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import YAML from "yaml";
 import { db } from "../index";
-import { detectionRules, ruleFamilies, categories } from "../schema";
+import { detectionRules, ruleFamilies } from "../schema";
 import { categoryForTags, type SigmaRule } from "./importers/sigma";
 
 /**
