@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sidebar";
 import { DETECTION_LANGUAGES } from "@/lib/constants";
 import type { PlatformSettings } from "@/lib/platform-settings";
+import { SidebarNavLink } from "@/components/layout/sidebar-nav-link";
 
 interface Category {
   id: string;
@@ -72,24 +73,17 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={pathname === "/"}
-                  render={<Link href="/" />}
-                >
-                  <LayoutDashboard />
-                  <span>Dashboard</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={pathname?.startsWith("/rules")}
-                  render={<Link href="/rules" />}
-                >
-                  <Library />
-                  <span>Rule Library</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <SidebarNavLink href="/" isActive={pathname === "/"}>
+                <LayoutDashboard />
+                <span>Dashboard</span>
+              </SidebarNavLink>
+              <SidebarNavLink
+                href="/rules"
+                isActive={!!pathname?.startsWith("/rules")}
+              >
+                <Library />
+                <span>Rule Library</span>
+              </SidebarNavLink>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -136,15 +130,13 @@ export function AppSidebar({
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              isActive={pathname?.startsWith("/settings")}
-              render={<Link href="/settings" />}
-            >
-              <Settings />
-              <span>Settings</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          <SidebarNavLink
+            href="/settings"
+            isActive={!!pathname?.startsWith("/settings")}
+          >
+            <Settings />
+            <span>Settings</span>
+          </SidebarNavLink>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

@@ -10,6 +10,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { LanguageCardLink } from "@/components/dashboard/language-card-link";
 import { DETECTION_LANGUAGES, SEVERITY_BADGE_VARIANTS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -60,18 +61,12 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         {DETECTION_LANGUAGES.map((lang) => (
-          <Link key={lang.value} href={`/rules?language=${lang.value}`}>
-            <Card className="transition-colors hover:bg-muted/50">
-              <CardContent className="flex flex-col gap-1">
-                <span className="text-2xl font-semibold tabular-nums">
-                  {countByLanguage.get(lang.value) ?? 0}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {lang.label}
-                </span>
-              </CardContent>
-            </Card>
-          </Link>
+          <LanguageCardLink
+            key={lang.value}
+            href={`/rules?language=${lang.value}`}
+            count={countByLanguage.get(lang.value) ?? 0}
+            label={lang.label}
+          />
         ))}
       </div>
 

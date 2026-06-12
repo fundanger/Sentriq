@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { AiChatProvider } from "@/components/ai/chat-context";
 import { AiChatDrawer } from "@/components/ai/ai-chat-drawer";
+import { PageTransition } from "@/components/layout/page-transition";
 import { getPlatformSettings } from "@/lib/platform-settings";
 
 export default async function DashboardLayout({
@@ -32,7 +33,7 @@ export default async function DashboardLayout({
         <AppSidebar categories={categories} platformSettings={platformSettings} />
         <SidebarInset>
           <TopBar session={session} />
-          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</div>
+          <PageTransition>{children}</PageTransition>
         </SidebarInset>
       </SidebarProvider>
       <AiChatDrawer />

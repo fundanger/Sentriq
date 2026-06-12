@@ -5,6 +5,7 @@ import { detectionRules, categories } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import { RuleFilters } from "@/components/rules/rule-filters";
 import { RuleCard } from "@/components/rules/rule-card";
+import { RuleGrid } from "@/components/rules/rule-grid";
 import {
   Pagination,
   PaginationContent,
@@ -131,7 +132,7 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <RuleGrid>
           {rules.map((rule) => (
             <RuleCard
               key={rule.id}
@@ -145,7 +146,7 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
               sourceProject={rule.source?.sourceProject}
             />
           ))}
-        </div>
+        </RuleGrid>
       )}
 
       {totalPages > 1 && (
