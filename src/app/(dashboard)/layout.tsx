@@ -8,6 +8,7 @@ import { TopBar } from "@/components/layout/top-bar";
 import { AiChatProvider } from "@/components/ai/chat-context";
 import { AiChatDrawer } from "@/components/ai/ai-chat-drawer";
 import { PageTransition } from "@/components/layout/page-transition";
+import { KeyboardShortcuts } from "@/components/layout/keyboard-shortcuts";
 import { getPlatformSettings } from "@/lib/platform-settings";
 
 export default async function DashboardLayout({
@@ -29,6 +30,7 @@ export default async function DashboardLayout({
 
   return (
     <AiChatProvider>
+      <KeyboardShortcuts />
       <SidebarProvider>
         <AppSidebar categories={categories} platformSettings={platformSettings} />
         <SidebarInset>

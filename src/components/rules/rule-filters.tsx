@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DETECTION_LANGUAGES, SEVERITY_LEVELS } from "@/lib/constants";
+import { FilterPresets } from "@/components/rules/filter-presets";
 
 interface Category {
   id: string;
@@ -97,6 +98,7 @@ export function RuleFilters({ categories }: { categories: Category[] }) {
           placeholder="Search rules..."
           value={searchInput}
           className="pl-8"
+          data-shortcut="search"
           onChange={(e) => handleSearchChange(e.target.value)}
         />
       </div>
@@ -149,6 +151,8 @@ export function RuleFilters({ categories }: { categories: Category[] }) {
           Clear
         </Button>
       )}
+
+      <FilterPresets hasFilters={hasFilters} />
     </div>
   );
 }

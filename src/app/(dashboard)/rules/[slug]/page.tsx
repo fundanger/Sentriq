@@ -274,7 +274,7 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
         </TabsContent>
 
         <TabsContent value="code" className="mt-4">
-          <CodeBlock code={rule.ruleBody} language={rule.language} />
+          <CodeBlock code={rule.ruleBody} language={rule.language} filename={rule.slug} />
         </TabsContent>
 
         <TabsContent value="mitre" className="mt-4 flex flex-col gap-4">
