@@ -5,6 +5,7 @@ import { eq, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { categories, mitreTechniques } from "@/db/schema";
+import { canManageRules } from "@/lib/permissions";
 import { getActiveLlmProvider } from "@/lib/ai/provider";
 import { DETECTION_LANGUAGES } from "@/lib/constants";
 import type { GeneratedRuleDraft, RuleGenerationRequest } from "@/lib/ai/types";
@@ -32,6 +33,9 @@ export async function generateRuleDraftAction(
   const session = await auth();
   if (!session?.user?.id) {
     return { error: "You must be signed in to generate a rule." };
+  }
+  if (!canManageRules(session.user.role)) {
+    return { error: "You don't have permission to generate rules." };
   }
 
   const parsed = generateRuleSchema.safeParse({

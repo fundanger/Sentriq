@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
+import { auth } from "@/lib/auth";
+import { canManageRules } from "@/lib/permissions";
 import { detectionRules } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +49,9 @@ const REFERENCE_TYPE_LABELS: Record<string, string> = {
 };
 
 export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
+  const session = await auth();
+  const canEdit = canManageRules(session?.user?.role);
+
   const { slug } = await params;
 
   const rule = await db.query.detectionRules.findFirst({
@@ -105,10 +110,12 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
               ruleTitle={rule.title}
               ruleLanguage={rule.language}
             />
-            <Button variant="outline" size="sm" render={<Link href={`/rules/${rule.slug}/edit`} />}>
-              <Pencil />
-              Edit
-            </Button>
+            {canEdit && (
+              <Button variant="outline" size="sm" render={<Link href={`/rules/${rule.slug}/edit`} />}>
+                <Pencil />
+                Edit
+              </Button>
+            )}
           </div>
         </div>
 

@@ -1,10 +1,19 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { db } from "@/db";
+import { auth } from "@/lib/auth";
+import { canManageRules } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { NewRuleForm } from "@/components/rules/new-rule-form";
 import { ArrowLeft } from "lucide-react";
 
 export default async function NewRulePage() {
+  const session = await auth();
+
+  if (!canManageRules(session?.user?.role)) {
+    redirect("/rules");
+  }
+
   const [categories, mitreTechniques] = await Promise.all([
     db.query.categories.findMany({
       orderBy: (c, { asc }) => [asc(c.sortOrder)],

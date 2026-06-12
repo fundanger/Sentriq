@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
+import { auth } from "@/lib/auth";
+import { canManageRules } from "@/lib/permissions";
 import { detectionRules } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import { RuleForm, type RuleFormDefaults } from "@/components/rules/rule-form";
@@ -13,6 +15,12 @@ interface EditRulePageProps {
 }
 
 export default async function EditRulePage({ params }: EditRulePageProps) {
+  const session = await auth();
+
+  if (!canManageRules(session?.user?.role)) {
+    redirect("/rules");
+  }
+
   const { slug } = await params;
 
   const [rule, categories, mitreTechniques] = await Promise.all([

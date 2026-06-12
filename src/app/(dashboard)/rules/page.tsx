@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { and, eq, like, or, count } from "drizzle-orm";
 import { db } from "@/db";
+import { auth } from "@/lib/auth";
+import { canManageRules } from "@/lib/permissions";
 import { detectionRules, categories } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import { RuleFilters } from "@/components/rules/rule-filters";
@@ -47,6 +49,9 @@ interface RulesPageProps {
 }
 
 export default async function RulesPage({ searchParams }: RulesPageProps) {
+  const session = await auth();
+  const canCreate = canManageRules(session?.user?.role);
+
   const params = await searchParams;
   const page = Math.max(1, Number(params.page) || 1);
 
@@ -116,10 +121,12 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
             {total} {total === 1 ? "rule" : "rules"} matching your filters.
           </p>
         </div>
-        <Button render={<Link href="/rules/new" />}>
-          <Plus />
-          New rule
-        </Button>
+        {canCreate && (
+          <Button render={<Link href="/rules/new" />}>
+            <Plus />
+            New rule
+          </Button>
+        )}
       </div>
 
       <RuleFilters categories={allCategories} />

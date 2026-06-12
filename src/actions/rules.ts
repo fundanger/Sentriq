@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { detectionRules, ruleMitreMappings } from "@/db/schema";
 import { DETECTION_LANGUAGES, SEVERITY_LEVELS } from "@/lib/constants";
+import { canManageRules } from "@/lib/permissions";
 import { embedRule } from "@/lib/ai/rag";
 
 const STATUS_VALUES = ["stable", "experimental", "deprecated", "draft"] as const;
@@ -67,6 +68,9 @@ export async function createRuleAction(
   const session = await auth();
   if (!session?.user?.id) {
     return { error: "You must be signed in to create a rule." };
+  }
+  if (!canManageRules(session.user.role)) {
+    return { error: "You don't have permission to create rules." };
   }
 
   const parsed = ruleSchema.safeParse(parseFormData(formData));
@@ -145,6 +149,9 @@ export async function updateRuleAction(
   if (!session?.user?.id) {
     return { error: "You must be signed in to edit a rule." };
   }
+  if (!canManageRules(session.user.role)) {
+    return { error: "You don't have permission to edit rules." };
+  }
 
   const parsed = ruleSchema.safeParse(parseFormData(formData));
   if (!parsed.success) {
@@ -216,6 +223,9 @@ export async function deleteRuleAction(ruleId: string) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("You must be signed in to delete a rule.");
+  }
+  if (!canManageRules(session.user.role)) {
+    throw new Error("You don't have permission to delete rules.");
   }
 
   await db.delete(detectionRules).where(eq(detectionRules.id, ruleId));

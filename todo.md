@@ -146,13 +146,51 @@ attribution requirements for these licenses.
   customize mode, ARIA labeling on chart widgets (recharts), focus management
   in the AI chat drawer and dialogs.
 
-## Known issues
+## §14 verification pass (2026-06-12)
 
-- Sidebar Languages/Categories nav sections compare
-  `pathname === "/rules?language=..."` / `"/rules?category=..."`, which never
-  matches because `usePathname()` excludes the query string — these nav items
-  never show as "active". Low priority cosmetic fix in
-  `src/components/layout/app-sidebar.tsx`.
+Ran the full end-to-end checklist (original §10 + Phase 2 additions) via code
+inspection and direct DB queries (no browser available this session — UI/
+visual items below should still get a manual pass when convenient):
+
+- Category/language distribution, 14 categories, 7,529 total rules, 13 CVEs,
+  603 MITRE techniques — all confirmed via direct query.
+- Log4Shell (CVE-2021-44228) rules carry correct CVSS 10.0 / vector / NVD link.
+- Sigma rule attribution (`rule_sources`): 3,268 Sigma rules, 2,056 Splunk,
+  2,001 Azure-Sentinel, 93 Falco, etc. — all show source/license credit on
+  rule cards and the detail page.
+- Encrypted API key storage confirmed at the code level (`encrypt()` ->
+  ciphertext + iv + authTag, three separate columns, never plaintext).
+- AI chat context injection (current rule + RAG matches) and graceful
+  412 "no provider configured" response confirmed in `src/app/api/chat/route.ts`.
+- "Generate with AI" returns an in-memory draft only; persistence requires an
+  explicit `createRuleAction` submit — confirmed not auto-saved.
+- Dashboard layout persistence: `saveDashboardLayoutAction` upserts
+  `dashboard_layouts` keyed by `userId`; 0 layouts saved so far (no one has
+  used Customize mode yet) — upsert/read-on-load logic is correct.
+- Role-gated settings (`/settings/ai`, `/settings/users`, `/settings/sso`,
+  `/settings/branding`): nav-hidden AND server-redirect-guarded for non-
+  super-admins — confirmed.
+- Whitelabel branding (`platform_settings` / `getPlatformSettings`) wired into
+  root layout, sidebar, login/first-run pages, dashboard — confirmed.
+- Embedding pipeline resume logic (`embedding IS NOT NULL` skip unless
+  `--force`, retry w/ backoff, concurrency=6) reviewed and correct; not run
+  end-to-end since no LLM provider is configured yet (0 providers, 0/7,529
+  embedded). Run `npm run db:embed` after configuring a provider with
+  embedding support (OpenAI/Gemini/OpenAI-compatible) in Settings > AI.
+
+**Bug found and fixed during this pass**: `canManageRules()` in
+`src/lib/permissions.ts` was defined but never used — `/rules/new`,
+`/rules/[slug]/edit`, and the `createRuleAction`/`updateRuleAction`/
+`deleteRuleAction`/`generateRuleDraftAction` Server Actions had no role check,
+so any authenticated `viewer` could create/edit/delete rules. Fixed: both
+pages now redirect non-`canManageRules` users to `/rules`, all four actions
+now reject with a permission error, and the "New rule"/"Edit" buttons are
+hidden for `viewer`-role users.
+
+**Still needs a manual browser pass** (can't be verified without a UI):
+dark/light mode toggle + persistence across reload, dashboard Customize
+drag-reorder UX, AI chat live exchange (once a provider is configured), and a
+general visual/motion review of the ~7,500-rule library at scale.
 
 ## Deferred (Phase 2 / out of this build)
 
