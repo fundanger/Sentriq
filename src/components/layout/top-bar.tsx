@@ -1,4 +1,4 @@
-import { Search, Sparkles, LogOut, UserRound, KeyRound } from "lucide-react";
+import { Search, LogOut, UserRound, KeyRound } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { AskAiButton } from "@/components/ai/ask-ai-button";
 import { signOutAction } from "@/actions/auth";
 import type { Session } from "next-auth";
 
@@ -44,10 +45,7 @@ export function TopBar({ session }: { session: Session }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <Button variant="outline" size="sm">
-          <Sparkles className="size-4" />
-          <span>Ask AI</span>
-        </Button>
+        <AskAiButton />
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger

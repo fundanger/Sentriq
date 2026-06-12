@@ -24,8 +24,8 @@ import {
   Pencil,
   ShieldAlert,
   ExternalLink,
-  Sparkles,
 } from "lucide-react";
+import { AskAiAboutRuleButton } from "@/components/ai/ask-ai-about-rule-button";
 
 interface RuleDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -93,10 +93,7 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Sparkles />
-              Ask AI about this rule
-            </Button>
+            <AskAiAboutRuleButton ruleSlug={rule.slug} ruleTitle={rule.title} />
             <Button variant="outline" size="sm" render={<Link href={`/rules/${rule.slug}/edit`} />}>
               <Pencil />
               Edit
