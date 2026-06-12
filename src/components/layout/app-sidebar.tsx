@@ -37,10 +37,19 @@ export function AppSidebar({ categories }: { categories: Category[] }) {
       <SidebarHeader>
         <Link
           href="/"
-          className="flex items-center gap-2 px-2 py-1.5 text-sm font-semibold"
+          className="flex items-center gap-2.5 px-2 py-1.5 text-sm font-semibold"
         >
-          <ShieldAlert className="size-5 text-primary" />
-          <span className="font-heading text-base tracking-tight">Sentriq</span>
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/15 ring-1 ring-primary/30">
+            <ShieldAlert className="size-4 text-primary" />
+          </span>
+          <span className="flex flex-col leading-none">
+            <span className="font-heading text-base tracking-tight">
+              Sentriq
+            </span>
+            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              Detection Platform
+            </span>
+          </span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
