@@ -10,7 +10,7 @@ export const users = sqliteTable("user", {
   emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
   image: text("image"),
   passwordHash: text("password_hash").notNull(),
-  role: text("role", { enum: ["admin", "analyst", "viewer"] })
+  role: text("role", { enum: ["super_admin", "admin", "analyst", "viewer"] })
     .notNull()
     .default("viewer"),
   isBreakGlass: integer("is_break_glass", { mode: "boolean" })

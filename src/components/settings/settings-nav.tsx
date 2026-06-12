@@ -3,22 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import type { UserRole } from "@/lib/auth-types";
 
 const NAV_ITEMS = [
-  { href: "/settings", label: "General" },
-  { href: "/settings/ai", label: "AI Provider" },
-  { href: "/settings/appearance", label: "Appearance" },
-  { href: "/settings/security", label: "Security" },
-  { href: "/settings/users", label: "Users" },
-  { href: "/settings/sso", label: "SSO" },
+  { href: "/settings", label: "General", superAdminOnly: false },
+  { href: "/settings/ai", label: "AI Provider", superAdminOnly: true },
+  { href: "/settings/appearance", label: "Appearance", superAdminOnly: false },
+  { href: "/settings/branding", label: "Branding", superAdminOnly: true },
+  { href: "/settings/security", label: "Security", superAdminOnly: false },
+  { href: "/settings/users", label: "Users", superAdminOnly: true },
+  { href: "/settings/sso", label: "SSO", superAdminOnly: true },
 ] as const;
 
-export function SettingsNav() {
+export function SettingsNav({ role }: { role: UserRole }) {
   const pathname = usePathname();
+  const items = NAV_ITEMS.filter((item) => !item.superAdminOnly || role === "super_admin");
 
   return (
     <nav className="flex shrink-0 gap-1 overflow-x-auto lg:w-48 lg:flex-col lg:overflow-visible">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const isActive =
           item.href === "/settings"
             ? pathname === "/settings"

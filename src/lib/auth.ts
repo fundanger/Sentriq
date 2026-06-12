@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import type { UserRole } from "@/lib/auth-types";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db),
@@ -60,7 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     session: async ({ session, token }) => {
       if (session.user) {
         session.user.id = token.sub as string;
-        session.user.role = token.role as "admin" | "analyst" | "viewer";
+        session.user.role = token.role as UserRole;
         session.user.mustChangePassword = token.mustChangePassword as boolean;
       }
       return session;

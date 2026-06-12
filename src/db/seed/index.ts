@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
 import { db } from "../index";
 import {
   categories,
@@ -203,7 +204,12 @@ async function seedBreakGlassAdmin() {
     where: (u, { eq }) => eq(u.email, email),
   });
   if (existing) {
-    console.log("Break-glass admin already exists, skipping.");
+    if (existing.isBreakGlass && existing.role !== "super_admin") {
+      console.log("Upgrading break-glass admin to super_admin...");
+      await db.update(users).set({ role: "super_admin" }).where(eq(users.id, existing.id));
+    } else {
+      console.log("Break-glass admin already exists, skipping.");
+    }
     return;
   }
 
@@ -214,7 +220,7 @@ async function seedBreakGlassAdmin() {
     email,
     name: "Break-Glass Admin",
     passwordHash,
-    role: "admin",
+    role: "super_admin",
     isBreakGlass: true,
     mustChangePassword: true,
     createdAt: new Date(),

@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const ROLE_LABELS: Record<string, string> = {
+  super_admin: "Super Administrator",
   admin: "Administrator",
   analyst: "Analyst",
   viewer: "Viewer",

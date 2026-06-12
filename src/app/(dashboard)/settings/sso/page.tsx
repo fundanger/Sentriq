@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import {
   Card,
   CardHeader,
@@ -6,8 +7,16 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { auth } from "@/lib/auth";
+import { isSuperAdmin } from "@/lib/permissions";
 
-export default function SsoSettingsPage() {
+export default async function SsoSettingsPage() {
+  const session = await auth();
+
+  if (!isSuperAdmin(session?.user?.role)) {
+    redirect("/settings");
+  }
+
   return (
     <Card>
       <CardHeader>

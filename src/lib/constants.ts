@@ -1,3 +1,9 @@
+export const PLATFORM_DEFAULTS = {
+  siteName: "Sentriq",
+  accentColor: "#06b6d4",
+  logoUrl: null as string | null,
+};
+
 export const DETECTION_LANGUAGES = [
   { value: "kql", label: "KQL", fullName: "Kusto Query Language (Microsoft Sentinel / Defender)" },
   { value: "sigma", label: "Sigma", fullName: "Sigma (generic SIEM rule format)" },

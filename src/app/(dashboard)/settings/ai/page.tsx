@@ -1,7 +1,9 @@
 import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { llmProviderConfigs } from "@/db/schema";
+import { isSuperAdmin } from "@/lib/permissions";
 import {
   Card,
   CardHeader,
@@ -21,6 +23,10 @@ const PROVIDER_LABELS: Record<string, string> = Object.fromEntries(
 
 export default async function AiSettingsPage() {
   const session = await auth();
+
+  if (!isSuperAdmin(session?.user?.role)) {
+    redirect("/settings");
+  }
 
   const configs = session?.user?.id
     ? await db.query.llmProviderConfigs.findMany({

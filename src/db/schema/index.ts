@@ -7,3 +7,4 @@ export * from "./sources";
 export * from "./dashboard";
 export * from "./auth";
 export * from "./settings";
+export * from "./platform-settings";
