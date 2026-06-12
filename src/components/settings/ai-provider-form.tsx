@@ -198,7 +198,7 @@ export function AiProviderForm() {
             )}
           </div>
         </CardContent>
-        <CardFooter className="justify-end">
+        <CardFooter>
           <Button type="submit" disabled={isPending}>
             {isPending ? "Saving..." : "Save & activate"}
           </Button>

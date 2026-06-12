@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   ShieldAlert,
   LayoutDashboard,
@@ -18,12 +18,11 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { DETECTION_LANGUAGES } from "@/lib/constants";
 import type { PlatformSettings } from "@/lib/platform-settings";
 import { SidebarNavLink } from "@/components/layout/sidebar-nav-link";
+import { SidebarFilterLink } from "@/components/layout/sidebar-filter-link";
 
 interface Category {
   id: string;
@@ -39,6 +38,9 @@ export function AppSidebar({
   platformSettings: PlatformSettings;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeLanguage = pathname === "/rules" ? searchParams.get("language") : null;
+  const activeCategory = pathname === "/rules" ? searchParams.get("category") : null;
 
   return (
     <Sidebar>
@@ -93,16 +95,15 @@ export function AppSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               {DETECTION_LANGUAGES.filter((lang) => lang.kind === "language").map((lang) => (
-                <SidebarMenuItem key={lang.value}>
-                  <SidebarMenuButton
-                    isActive={pathname === `/rules?language=${lang.value}`}
-                    tooltip={lang.fullName}
-                    render={<Link href={`/rules?language=${lang.value}`} />}
-                  >
-                    <ChevronRight className="size-3.5 opacity-50" />
-                    <span>{lang.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <SidebarFilterLink
+                  key={lang.value}
+                  href={`/rules?language=${lang.value}`}
+                  isActive={activeLanguage === lang.value}
+                  tooltip={lang.fullName}
+                >
+                  <ChevronRight className="size-3.5 opacity-50" />
+                  <span>{lang.label}</span>
+                </SidebarFilterLink>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -113,16 +114,15 @@ export function AppSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               {DETECTION_LANGUAGES.filter((lang) => lang.kind === "platform").map((lang) => (
-                <SidebarMenuItem key={lang.value}>
-                  <SidebarMenuButton
-                    isActive={pathname === `/rules?language=${lang.value}`}
-                    tooltip={lang.fullName}
-                    render={<Link href={`/rules?language=${lang.value}`} />}
-                  >
-                    <ChevronRight className="size-3.5 opacity-50" />
-                    <span>{lang.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <SidebarFilterLink
+                  key={lang.value}
+                  href={`/rules?language=${lang.value}`}
+                  isActive={activeLanguage === lang.value}
+                  tooltip={lang.fullName}
+                >
+                  <ChevronRight className="size-3.5 opacity-50" />
+                  <span>{lang.label}</span>
+                </SidebarFilterLink>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -133,16 +133,15 @@ export function AppSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               {categories.map((category) => (
-                <SidebarMenuItem key={category.id}>
-                  <SidebarMenuButton
-                    isActive={pathname === `/rules?category=${category.slug}`}
-                    tooltip={category.name}
-                    render={<Link href={`/rules?category=${category.slug}`} />}
-                  >
-                    <ChevronRight className="size-3.5 opacity-50" />
-                    <span>{category.name}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <SidebarFilterLink
+                  key={category.id}
+                  href={`/rules?category=${category.slug}`}
+                  isActive={activeCategory === category.slug}
+                  tooltip={category.name}
+                >
+                  <ChevronRight className="size-3.5 opacity-50" />
+                  <span>{category.name}</span>
+                </SidebarFilterLink>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>

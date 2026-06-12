@@ -207,7 +207,12 @@ export function AiChatDrawer() {
               className="resize-none"
               disabled={isStreaming}
             />
-            <Button type="submit" size="icon" disabled={isStreaming || !input.trim()}>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={isStreaming || !input.trim()}
+              aria-label="Send message"
+            >
               {isStreaming ? <Loader2 className="animate-spin" /> : <Send />}
             </Button>
           </form>

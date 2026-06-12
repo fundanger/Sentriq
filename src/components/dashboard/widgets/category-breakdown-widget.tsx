@@ -18,6 +18,11 @@ export function CategoryBreakdownWidget({ data }: { data: DashboardData }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-1">
+        {data.categoryCounts.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            No categories with rules yet.
+          </p>
+        )}
         {data.categoryCounts
           .slice()
           .sort((a, b) => b.count - a.count)

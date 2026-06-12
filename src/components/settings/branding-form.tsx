@@ -34,7 +34,7 @@ export function BrandingForm({ settings }: { settings: PlatformSettings }) {
         </Alert>
       )}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="siteName">Site name</Label>
         <Input
           id="siteName"

@@ -13,7 +13,12 @@ export function MitreChip({
   url: string;
 }) {
   return (
-    <Link href={url} target="_blank" rel="noreferrer">
+    <Link
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`MITRE ATT&CK technique ${id}: ${name} (${tactic}). Opens in a new tab.`}
+    >
       <Badge
         variant="outline"
         className="gap-1.5 border-border py-1 text-xs transition-colors hover:bg-muted"

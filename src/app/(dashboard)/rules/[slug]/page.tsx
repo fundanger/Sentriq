@@ -24,6 +24,11 @@ import {
   Pencil,
   ShieldAlert,
   ExternalLink,
+  FileText,
+  Code2,
+  Crosshair,
+  SlidersHorizontal,
+  BookOpen,
 } from "lucide-react";
 import { AskAiAboutRuleButton } from "@/components/ai/ask-ai-about-rule-button";
 import { SimilarRulesCard } from "@/components/rules/similar-rules-card";
@@ -114,11 +119,26 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
 
       <Tabs defaultValue="overview">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="code">Rule Code</TabsTrigger>
-          <TabsTrigger value="mitre">MITRE &amp; CVE</TabsTrigger>
-          <TabsTrigger value="tuning">FP &amp; Tuning</TabsTrigger>
-          <TabsTrigger value="references">References</TabsTrigger>
+          <TabsTrigger value="overview">
+            <FileText />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="code">
+            <Code2 />
+            Rule Code
+          </TabsTrigger>
+          <TabsTrigger value="mitre">
+            <Crosshair />
+            MITRE &amp; CVE
+          </TabsTrigger>
+          <TabsTrigger value="tuning">
+            <SlidersHorizontal />
+            FP &amp; Tuning
+          </TabsTrigger>
+          <TabsTrigger value="references">
+            <BookOpen />
+            References
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 flex flex-col gap-4">
@@ -346,7 +366,7 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
                     className="flex items-center justify-between gap-3 py-2.5 text-sm transition-colors hover:text-primary first:pt-0 last:pb-0"
                   >
                     <span className="flex items-center gap-2">
-                      <ExternalLink className="size-3.5 text-muted-foreground" />
+                      <ExternalLink className="size-3 text-muted-foreground" />
                       {ref.title}
                     </span>
                     <span className="text-xs text-muted-foreground">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { findSimilarRules } from "@/lib/ai/rag";
+import { getActiveLlmProvider } from "@/lib/ai/provider";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { LanguageBadge } from "@/components/rules/language-badge";
 import { Sparkles } from "lucide-react";
@@ -21,11 +22,8 @@ export async function SimilarRulesCard({ rule }: SimilarRulesCardProps) {
     return null;
   }
 
-  const matches = await findSimilarRules(session.user.id, rule, 5);
-
-  if (matches.length === 0) {
-    return null;
-  }
+  const provider = await getActiveLlmProvider(session.user.id);
+  const matches = provider ? await findSimilarRules(session.user.id, rule, 5) : [];
 
   return (
     <Card>
@@ -40,6 +38,21 @@ export async function SimilarRulesCard({ rule }: SimilarRulesCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col divide-y divide-border">
+        {!provider && (
+          <p className="py-2.5 text-sm text-muted-foreground first:pt-0 last:pb-0">
+            Configure an AI provider with embedding support in{" "}
+            <Link href="/settings/ai" className="underline">
+              Settings &gt; AI Provider
+            </Link>{" "}
+            to enable semantic search.
+          </p>
+        )}
+        {provider && matches.length === 0 && (
+          <p className="py-2.5 text-sm text-muted-foreground first:pt-0 last:pb-0">
+            No similar rules found yet. This improves as more rules in the
+            library are embedded.
+          </p>
+        )}
         {matches.map((match) => (
           <Link
             key={match.slug}

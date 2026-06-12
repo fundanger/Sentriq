@@ -51,7 +51,12 @@ export function TopBar({ session }: { session: Session }) {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button variant="ghost" size="icon" className="rounded-full">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                aria-label={`Account menu for ${displayName}`}
+              >
                 <Avatar className="size-7">
                   <AvatarFallback className="text-xs">
                     {initialsFor(user?.name, email)}

@@ -13,7 +13,7 @@ export function CvssBadge({ score, version }: { score: number; version: string }
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-2 rounded-lg border px-3 py-1.5",
+        "inline-flex w-32 shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5",
         band.className
       )}
     >
