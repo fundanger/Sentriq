@@ -18,15 +18,16 @@ attribution requirements for these licenses.
   tactic-of-technique lookup (falls back to `security_domain`/`category`).
   All rules default to `medium` severity (upstream schema has no
   severity/risk field) — revisit if a better signal is found later.
-- **NEXT — Azure/Azure-Sentinel Analytic Rules** (`Azure/Azure-Sentinel`,
-  MIT) — strong KQL source (current `kql` count is only 14). 2,116
-  `Solutions/*/Analytic Rules/*.yaml` files enumerated via the GitHub
-  git-trees recursive API (repo itself is ~14.6GB, too large to clone;
-  fetch each file individually via `raw.githubusercontent.com`). Schema has
-  clean `tactics` (ATT&CK tactic names directly) and `relevantTechniques`
-  (T#### IDs) fields — category/MITRE mapping should be more accurate than
-  Sigma/Splunk's indirect lookups. Implement as
-  `src/db/seed/importers/azure-sentinel.ts`, registry id `azure-sentinel`.
+- **DONE — Azure/Azure-Sentinel Analytic Rules** (`Azure/Azure-Sentinel`,
+  MIT) — imported via `src/db/seed/importers/azure-sentinel.ts`
+  (`npm run db:import -- azure-sentinel`), 2,001 KQL rules (`kql` count went
+  from 14 to 2,015). Discovered all 2,116 `Solutions/*/Analytic
+  Rules/*.yaml` files via the GitHub git-trees recursive API (repo itself is
+  ~14.6GB, too large to clone; fetched each file individually via
+  `raw.githubusercontent.com`, cached under `tmp/azure-sentinel/`). Category
+  mapped from `tactics` (ATT&CK tactic names) directly; MITRE IDs from
+  `relevantTechniques`; severity from the rule's own `severity` field
+  (varied distribution, unlike Splunk).
 - **EXCLUDED — Elastic detection rules** (`elastic/detection-rules`, Elastic
   License 2.0) — ELv2's anti-managed-service clause conflicts with the
   "free for commercial use" policy above. Not importing.
@@ -35,9 +36,30 @@ attribution requirements for these licenses.
   tooling/generators, not corpora, or have no clear license) — no
   permissively-licensed YARA rule corpus of meaningful scale was found.
   Revisit if one surfaces later.
+- **EXCLUDED — Suricata/OSSEC rule corpora** (`OISF/suricata`, GPL-2.0;
+  `ossec/ossec-hids`, GPL-2.0; `wazuh/wazuh-ruleset`, no license) — copyleft
+  or unlicensed, conflicts with policy. Not importing.
+- **NEXT — Falco rules** (`falcosecurity/rules`, Apache-2.0) — runtime
+  container/cloud security rules (Sysdig/Falco syntax), ~220KB across
+  `rules/falco_rules.yaml`, `falco-incubating_rules.yaml`,
+  `falco-sandbox_rules.yaml`. Much smaller scale than Sigma/Splunk/Sentinel
+  but fills a real gap (container/cloud runtime detections) and is the
+  cleanest-licensed corpus of its kind found. Would need a new `language:
+  falco` value added to the `RuleLanguage` union
+  (`src/db/seed/types.ts`)+schema enum, plus UI support (language badge,
+  filters, syntax highlighting). Rules already carry MITRE tags in a
+  `tags:` array (e.g. `T1610`) for mapping.
 - **No viable source found — Cloudflare WAF rules** — GitHub search turned
   up only automation/tooling repos (IP blockers, bot-detection workers), not
   rule corpora. Revisit if one surfaces later.
+- **Reference-only, not importable as rules — MITRE CAR**
+  (`mitre-attack/car`, Apache-2.0) and **Atomic Red Team**
+  (`redcanaryco/atomic-red-team`, MIT) — CAR is "analytics" (pseudocode +
+  references to Sigma/Splunk/EQL implementations we likely already have);
+  Atomic Red Team is attack *tests*, not detections. Both could enrich
+  existing rule families later (e.g. "Test this detection" links on the
+  rule detail page mapping MITRE technique → Atomic Red Team test), but
+  aren't a new importer source.
 - Sigma category-mapping heuristic is heavily skewed: ~1,440 of ~3,300
   imported rules landed in "Insider Threat & Anomalous Behavior" (the
   fallback bucket) and "Initial Access" has zero rules. Revisit the
