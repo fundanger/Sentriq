@@ -26,6 +26,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { AskAiAboutRuleButton } from "@/components/ai/ask-ai-about-rule-button";
+import { SimilarRulesCard } from "@/components/rules/similar-rules-card";
 
 interface RuleDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -225,6 +226,16 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
               </div>
             )}
           </div>
+
+          <SimilarRulesCard
+            rule={{
+              id: rule.id,
+              title: rule.title,
+              descriptionSummary: rule.descriptionSummary,
+              descriptionFull: rule.descriptionFull,
+              embedding: rule.embedding,
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="code" className="mt-4">

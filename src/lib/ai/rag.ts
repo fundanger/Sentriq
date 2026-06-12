@@ -62,6 +62,69 @@ export async function embedRule(
   }
 }
 
+/**
+ * Finds rules similar to the given rule using stored embeddings. Uses the
+ * rule's own `embedding` column if present, otherwise embeds it on the fly
+ * (without persisting) if a provider is configured. Returns `[]` if no
+ * provider is configured or no other rules have embeddings yet.
+ */
+export async function findSimilarRules(
+  userId: string,
+  rule: {
+    id: string;
+    title: string;
+    descriptionSummary: string;
+    descriptionFull?: string | null;
+    embedding?: number[] | null;
+  },
+  topK = 5
+): Promise<RagMatch[]> {
+  let queryEmbedding = rule.embedding ?? null;
+
+  if (!queryEmbedding) {
+    const provider = await getActiveLlmProvider(userId);
+    if (!provider) {
+      return [];
+    }
+
+    try {
+      queryEmbedding = await provider.embed(buildEmbeddingInput(rule));
+    } catch {
+      return [];
+    }
+  }
+
+  if (!queryEmbedding || queryEmbedding.length === 0) {
+    return [];
+  }
+
+  const rules = await db
+    .select({
+      id: detectionRules.id,
+      title: detectionRules.title,
+      slug: detectionRules.slug,
+      language: detectionRules.language,
+      descriptionSummary: detectionRules.descriptionSummary,
+      embedding: detectionRules.embedding,
+    })
+    .from(detectionRules)
+    .where(isNotNull(detectionRules.embedding));
+
+  const scored = rules
+    .filter((r) => r.id !== rule.id)
+    .map((r) => ({
+      title: r.title,
+      slug: r.slug,
+      language: r.language as DetectionLanguage,
+      descriptionSummary: r.descriptionSummary,
+      score: cosineSimilarity(queryEmbedding!, r.embedding ?? []),
+    }))
+    .filter((r) => r.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return scored.slice(0, topK);
+}
+
 export async function searchSimilarRules(
   userId: string,
   query: string,
