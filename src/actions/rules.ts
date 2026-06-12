@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { detectionRules, ruleMitreMappings } from "@/db/schema";
 import { DETECTION_LANGUAGES, SEVERITY_LEVELS } from "@/lib/constants";
+import { embedRule } from "@/lib/ai/rag";
 
 const STATUS_VALUES = ["stable", "experimental", "deprecated", "draft"] as const;
 const LANGUAGE_VALUES = DETECTION_LANGUAGES.map((l) => l.value) as [string, ...string[]];
@@ -125,6 +126,13 @@ export async function createRuleAction(
     );
   }
 
+  await embedRule(session.user.id, {
+    id,
+    title: data.title,
+    descriptionSummary: data.descriptionSummary,
+    descriptionFull: data.descriptionFull,
+  });
+
   redirect(`/rules/${data.slug}`);
 }
 
@@ -193,6 +201,13 @@ export async function updateRuleAction(
       }))
     );
   }
+
+  await embedRule(session.user.id, {
+    id: ruleId,
+    title: data.title,
+    descriptionSummary: data.descriptionSummary,
+    descriptionFull: data.descriptionFull,
+  });
 
   redirect(`/rules/${data.slug}`);
 }
