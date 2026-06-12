@@ -5,14 +5,14 @@ export const PLATFORM_DEFAULTS = {
 };
 
 export const DETECTION_LANGUAGES = [
-  { value: "kql", label: "KQL", fullName: "Kusto Query Language (Microsoft Sentinel / Defender)" },
-  { value: "sigma", label: "Sigma", fullName: "Sigma (generic SIEM rule format)" },
-  { value: "sentinelone", label: "SentinelOne", fullName: "SentinelOne Deep Visibility" },
-  { value: "cloudflare", label: "Cloudflare", fullName: "Cloudflare WAF" },
-  { value: "splunk", label: "Splunk", fullName: "Splunk SPL" },
-  { value: "yara", label: "YARA", fullName: "YARA" },
-  { value: "elastic", label: "Elastic", fullName: "Elastic EQL / ES|QL" },
-  { value: "falco", label: "Falco", fullName: "Falco (runtime container/cloud security rules)" },
+  { value: "kql", label: "KQL", fullName: "Kusto Query Language (Microsoft Sentinel / Defender)", kind: "language" },
+  { value: "sigma", label: "Sigma", fullName: "Sigma (generic SIEM rule format)", kind: "language" },
+  { value: "splunk", label: "Splunk", fullName: "Splunk SPL", kind: "language" },
+  { value: "yara", label: "YARA", fullName: "YARA", kind: "language" },
+  { value: "elastic", label: "Elastic", fullName: "Elastic EQL / ES|QL", kind: "language" },
+  { value: "sentinelone", label: "SentinelOne", fullName: "SentinelOne Deep Visibility", kind: "platform" },
+  { value: "cloudflare", label: "Cloudflare", fullName: "Cloudflare WAF", kind: "platform" },
+  { value: "falco", label: "Falco", fullName: "Falco (runtime container/cloud security rules)", kind: "platform" },
 ] as const;
 
 export type DetectionLanguage = (typeof DETECTION_LANGUAGES)[number]["value"];

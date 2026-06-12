@@ -92,7 +92,27 @@ export function AppSidebar({
           <SidebarGroupLabel>Languages</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {DETECTION_LANGUAGES.map((lang) => (
+              {DETECTION_LANGUAGES.filter((lang) => lang.kind === "language").map((lang) => (
+                <SidebarMenuItem key={lang.value}>
+                  <SidebarMenuButton
+                    isActive={pathname === `/rules?language=${lang.value}`}
+                    tooltip={lang.fullName}
+                    render={<Link href={`/rules?language=${lang.value}`} />}
+                  >
+                    <ChevronRight className="size-3.5 opacity-50" />
+                    <span>{lang.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Platforms</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {DETECTION_LANGUAGES.filter((lang) => lang.kind === "platform").map((lang) => (
                 <SidebarMenuItem key={lang.value}>
                   <SidebarMenuButton
                     isActive={pathname === `/rules?language=${lang.value}`}
