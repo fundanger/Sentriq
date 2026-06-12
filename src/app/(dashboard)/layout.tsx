@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { AiChatProvider } from "@/components/ai/chat-context";
 import { AiChatDrawer } from "@/components/ai/ai-chat-drawer";
+import { getPlatformSettings } from "@/lib/platform-settings";
 
 export default async function DashboardLayout({
   children,
@@ -18,14 +19,17 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const categories = await db.query.categories.findMany({
-    orderBy: (c, { asc }) => [asc(c.sortOrder)],
-  });
+  const [categories, platformSettings] = await Promise.all([
+    db.query.categories.findMany({
+      orderBy: (c, { asc }) => [asc(c.sortOrder)],
+    }),
+    getPlatformSettings(),
+  ]);
 
   return (
     <AiChatProvider>
       <SidebarProvider>
-        <AppSidebar categories={categories} />
+        <AppSidebar categories={categories} platformSettings={platformSettings} />
         <SidebarInset>
           <TopBar session={session} />
           <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</div>

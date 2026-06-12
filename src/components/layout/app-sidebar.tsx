@@ -22,6 +22,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { DETECTION_LANGUAGES } from "@/lib/constants";
+import type { PlatformSettings } from "@/lib/platform-settings";
 
 interface Category {
   id: string;
@@ -29,7 +30,13 @@ interface Category {
   slug: string;
 }
 
-export function AppSidebar({ categories }: { categories: Category[] }) {
+export function AppSidebar({
+  categories,
+  platformSettings,
+}: {
+  categories: Category[];
+  platformSettings: PlatformSettings;
+}) {
   const pathname = usePathname();
 
   return (
@@ -39,12 +46,21 @@ export function AppSidebar({ categories }: { categories: Category[] }) {
           href="/"
           className="flex items-center gap-2.5 px-2 py-1.5 text-sm font-semibold"
         >
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/15 ring-1 ring-primary/30">
-            <ShieldAlert className="size-4 text-primary" />
-          </span>
+          {platformSettings.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={platformSettings.logoUrl}
+              alt={platformSettings.siteName}
+              className="size-7 shrink-0 rounded-md object-contain"
+            />
+          ) : (
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/15 ring-1 ring-primary/30">
+              <ShieldAlert className="size-4 text-primary" />
+            </span>
+          )}
           <span className="flex flex-col leading-none">
             <span className="font-heading text-base tracking-tight">
-              Sentriq
+              {platformSettings.siteName}
             </span>
             <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
               Detection Platform

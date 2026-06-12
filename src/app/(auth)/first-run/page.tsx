@@ -6,14 +6,17 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getPlatformSettings } from "@/lib/platform-settings";
 import { ChangePasswordForm } from "./change-password-form";
 
-export default function FirstRunPage() {
+export default async function FirstRunPage() {
+  const settings = await getPlatformSettings();
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-2 text-center">
         <span className="font-heading text-2xl font-semibold tracking-tight">
-          Sentriq
+          {settings.siteName}
         </span>
         <p className="text-sm text-muted-foreground">
           Threat detection &amp; prevention rule library

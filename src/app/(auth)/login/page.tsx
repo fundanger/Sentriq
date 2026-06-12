@@ -5,14 +5,17 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { getPlatformSettings } from "@/lib/platform-settings";
 import { LoginForm } from "./login-form";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const settings = await getPlatformSettings();
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-2 text-center">
         <span className="font-heading text-2xl font-semibold tracking-tight">
-          Sentriq
+          {settings.siteName}
         </span>
         <p className="text-sm text-muted-foreground">
           Threat detection &amp; prevention rule library
