@@ -13,20 +13,27 @@ const REPO_BLOB_BASE = "https://github.com/SigmaHQ/sigma/blob/master";
 const BASE_DIRS = ["rules", "rules-threat-hunting"];
 const EMERGING_DIRS = ["rules-emerging-threats", "rules-compliance"];
 
-/** Maps Sigma `attack.<tactic>` tags to Sentriq category IDs (src/db/seed/categories.ts). */
+/**
+ * Maps Sigma `attack.<tactic>` tags to Sentriq category IDs (src/db/seed/categories.ts).
+ * Sigma tactic tags use hyphens (e.g. `attack.credential-access`, `attack.command-and-control`),
+ * not the underscored ATT&CK tactic names. Also includes a couple of non-standard tags Sigma
+ * itself uses in place of (or alongside) tactic tags.
+ */
 const TACTIC_TO_CATEGORY: Record<string, string> = {
   reconnaissance: "cat-recon",
-  resource_development: "cat-recon",
-  initial_access: "cat-initial-access",
+  "resource-development": "cat-recon",
+  "initial-access": "cat-initial-access",
   execution: "cat-ransomware",
   persistence: "cat-persistence",
-  privilege_escalation: "cat-privilege-escalation",
-  defense_evasion: "cat-defense-evasion",
-  credential_access: "cat-credential-access",
+  "privilege-escalation": "cat-privilege-escalation",
+  "defense-evasion": "cat-defense-evasion",
+  "defense-impairment": "cat-defense-evasion",
+  stealth: "cat-defense-evasion",
+  "credential-access": "cat-credential-access",
   discovery: "cat-recon",
-  lateral_movement: "cat-lateral-movement",
+  "lateral-movement": "cat-lateral-movement",
   collection: "cat-insider-threat",
-  command_and_control: "cat-c2",
+  "command-and-control": "cat-c2",
   exfiltration: "cat-exfiltration",
   impact: "cat-ransomware",
 };
@@ -66,7 +73,7 @@ function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-interface SigmaRule {
+export interface SigmaRule {
   id?: string;
   title?: string;
   description?: string;
@@ -82,7 +89,7 @@ interface SigmaRule {
   detection?: unknown;
 }
 
-function categoryForTags(tags: string[], logsource?: Record<string, string>): string {
+export function categoryForTags(tags: string[], logsource?: Record<string, string>): string {
   for (const tag of tags) {
     const t = tag.toLowerCase();
     if (t.startsWith("attack.")) {

@@ -94,12 +94,15 @@ attribution requirements for these licenses.
   existing rule families later (e.g. "Test this detection" links on the
   rule detail page mapping MITRE technique → Atomic Red Team test), but
   aren't a new importer source.
-- Sigma category-mapping heuristic is heavily skewed: ~1,440 of ~3,300
-  imported rules landed in "Insider Threat & Anomalous Behavior" (the
-  fallback bucket) and "Initial Access" has zero rules. Revisit the
-  ATT&CK-tactic-tag → category lookup table in the Sigma importer to better
-  distribute rules tagged with tactics like `attack.initial_access`,
-  `attack.discovery`, etc.
+- ~~Sigma category-mapping heuristic is heavily skewed~~ — FIXED. The
+  `TACTIC_TO_CATEGORY` lookup in the Sigma importer used underscored keys
+  (`credential_access`) but Sigma's `attack.<tactic>` tags use hyphens
+  (`attack.credential-access`), so nearly every lookup fell through to the
+  "Insider Threat & Anomalous Behavior" default. Also added mappings for the
+  non-standard `attack.stealth`/`attack.defense-impairment` tags ->
+  Defense Evasion. Ran `src/db/seed/recategorize-sigma.ts` to re-derive
+  `primary_category_id` for all 3,285 already-imported Sigma rules (1,857
+  updated); "Insider Threat & Anomalous Behavior" dropped from ~1,947 to 94.
 - Re-import cadence: Sigma's `rules-emerging-threats/`/`rules-compliance/`
   (imported via `--include-emerging`) update frequently upstream. Consider a
   periodic re-import job or at least a documented manual cadence, plus a
