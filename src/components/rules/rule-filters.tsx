@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,35 @@ export function RuleFilters({ categories }: { categories: Category[] }) {
   const severity = searchParams.get("severity") ?? ALL;
   const search = searchParams.get("q") ?? "";
 
+  const [searchInput, setSearchInput] = useState(search);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep the input in sync if the URL changes externally (e.g. "Clear").
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  function handleSearchChange(value: string) {
+    setSearchInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) {
+        params.set("q", value);
+      } else {
+        params.delete("q");
+      }
+      params.delete("page");
+      router.push(`${pathname}?${params.toString()}`);
+    }, 300);
+  }
+
   function updateParam(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
     if (!value || value === ALL) {
@@ -65,19 +95,9 @@ export function RuleFilters({ categories }: { categories: Category[] }) {
         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search rules..."
-          defaultValue={search}
+          value={searchInput}
           className="pl-8"
-          onChange={(e) => {
-            const value = e.target.value;
-            const params = new URLSearchParams(searchParams.toString());
-            if (value) {
-              params.set("q", value);
-            } else {
-              params.delete("q");
-            }
-            params.delete("page");
-            router.push(`${pathname}?${params.toString()}`);
-          }}
+          onChange={(e) => handleSearchChange(e.target.value)}
         />
       </div>
 

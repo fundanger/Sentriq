@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { AskAiAboutRuleButton } from "@/components/ai/ask-ai-about-rule-button";
 import { SimilarRulesCard } from "@/components/rules/similar-rules-card";
+import { TrackRecentlyViewed } from "@/components/rules/track-recently-viewed";
 
 interface RuleDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -77,6 +78,13 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      <TrackRecentlyViewed
+        slug={rule.slug}
+        title={rule.title}
+        language={rule.language}
+        severity={rule.severity}
+        categoryName={rule.primaryCategory?.name}
+      />
       <div className="flex flex-col gap-3">
         <Button variant="ghost" size="sm" className="w-fit" render={<Link href="/rules" />}>
           <ArrowLeft />

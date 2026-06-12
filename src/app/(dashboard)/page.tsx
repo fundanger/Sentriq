@@ -9,6 +9,7 @@ import { SeverityDistributionWidget } from "@/components/dashboard/widgets/sever
 import { CategoryBreakdownWidget } from "@/components/dashboard/widgets/category-breakdown-widget";
 import { MitreCoverageWidget } from "@/components/dashboard/widgets/mitre-coverage-widget";
 import { RecentRulesWidget } from "@/components/dashboard/widgets/recent-rules-widget";
+import { RecentlyViewedWidget } from "@/components/dashboard/widgets/recently-viewed-widget";
 import { DETECTION_LANGUAGES } from "@/lib/constants";
 
 export default async function DashboardPage() {
@@ -46,6 +47,7 @@ export default async function DashboardPage() {
           category_breakdown: <CategoryBreakdownWidget data={data} />,
           mitre_coverage: <MitreCoverageWidget data={data} />,
           recent_rules: <RecentRulesWidget data={data} />,
+          recently_viewed: <RecentlyViewedWidget />,
         }}
       />
     </div>

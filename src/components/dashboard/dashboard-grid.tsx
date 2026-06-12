@@ -41,6 +41,7 @@ const WIDGET_SPAN: Record<WidgetId, string> = {
   category_breakdown: "lg:col-span-2",
   mitre_coverage: "lg:col-span-2",
   recent_rules: "lg:col-span-2",
+  recently_viewed: "lg:col-span-2",
 };
 
 interface DashboardGridProps {
