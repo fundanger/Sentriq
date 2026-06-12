@@ -3,5 +3,7 @@ export * from "./mitre";
 export * from "./cves";
 export * from "./references";
 export * from "./rules";
+export * from "./sources";
+export * from "./dashboard";
 export * from "./auth";
 export * from "./settings";
