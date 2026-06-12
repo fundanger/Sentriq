@@ -16,7 +16,7 @@ export function LanguageCardLink({
   return (
     <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.15 }}>
       <Link href={href}>
-        <Card className="transition-colors hover:bg-muted/50 hover:border-primary/40">
+        <Card className="transition-all hover:bg-muted/50 hover:ring-primary/40">
           <CardContent className="flex flex-col gap-1">
             <span className="text-2xl font-semibold tabular-nums">
               {count}

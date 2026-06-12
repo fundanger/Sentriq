@@ -36,7 +36,7 @@ export function RuleCard({
 }: RuleCardProps) {
   return (
     <Link href={`/rules/${slug}`}>
-      <Card className="h-full transition-colors hover:bg-muted/50">
+      <Card className="h-full transition-all hover:bg-muted/50 hover:ring-primary/40">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="leading-snug">{title}</CardTitle>
