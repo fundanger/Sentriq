@@ -26,7 +26,7 @@ export const detectionRules = sqliteTable(
       onDelete: "set null",
     }),
     language: text("language", {
-      enum: ["kql", "sigma", "sentinelone", "cloudflare", "splunk", "yara", "elastic"],
+      enum: ["kql", "sigma", "sentinelone", "cloudflare", "splunk", "yara", "elastic", "falco"],
     }).notNull(),
     platformVariant: text("platform_variant"),
     title: text("title").notNull(),

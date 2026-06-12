@@ -5,7 +5,8 @@ export type RuleLanguage =
   | "cloudflare"
   | "splunk"
   | "yara"
-  | "elastic";
+  | "elastic"
+  | "falco";
 
 export type RuleSeverity = "informational" | "low" | "medium" | "high" | "critical";
 

@@ -12,6 +12,7 @@ export const DETECTION_LANGUAGES = [
   { value: "splunk", label: "Splunk", fullName: "Splunk SPL" },
   { value: "yara", label: "YARA", fullName: "YARA" },
   { value: "elastic", label: "Elastic", fullName: "Elastic EQL / ES|QL" },
+  { value: "falco", label: "Falco", fullName: "Falco (runtime container/cloud security rules)" },
 ] as const;
 
 export type DetectionLanguage = (typeof DETECTION_LANGUAGES)[number]["value"];

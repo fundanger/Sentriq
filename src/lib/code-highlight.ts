@@ -9,6 +9,7 @@ const SHIKI_LANG_MAP: Record<DetectionLanguage, string> = {
   splunk: "splunk",
   yara: "yaml",
   elastic: "sql",
+  falco: "yaml",
 };
 
 export async function highlightRuleBody(

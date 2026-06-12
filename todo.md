@@ -39,16 +39,19 @@ attribution requirements for these licenses.
 - **EXCLUDED — Suricata/OSSEC rule corpora** (`OISF/suricata`, GPL-2.0;
   `ossec/ossec-hids`, GPL-2.0; `wazuh/wazuh-ruleset`, no license) — copyleft
   or unlicensed, conflicts with policy. Not importing.
-- **NEXT — Falco rules** (`falcosecurity/rules`, Apache-2.0) — runtime
-  container/cloud security rules (Sysdig/Falco syntax), ~220KB across
-  `rules/falco_rules.yaml`, `falco-incubating_rules.yaml`,
-  `falco-sandbox_rules.yaml`. Much smaller scale than Sigma/Splunk/Sentinel
-  but fills a real gap (container/cloud runtime detections) and is the
-  cleanest-licensed corpus of its kind found. Would need a new `language:
-  falco` value added to the `RuleLanguage` union
-  (`src/db/seed/types.ts`)+schema enum, plus UI support (language badge,
-  filters, syntax highlighting). Rules already carry MITRE tags in a
-  `tags:` array (e.g. `T1610`) for mapping.
+- **DONE — Falco rules** (`falcosecurity/rules`, Apache-2.0) — added new
+  `falco` value to the `language` enum (`src/db/schema/rules.ts`,
+  `src/db/seed/types.ts`, `DETECTION_LANGUAGES` in
+  `src/lib/constants.ts`, Shiki map in `src/lib/code-highlight.ts` — no DB
+  migration needed, SQLite `language` column has no CHECK constraint).
+  Imported via `src/db/seed/importers/falco.ts`
+  (`npm run db:import -- falco`), 93 runtime container/cloud security rules
+  from `rules/falco_rules.yaml` + `falco-incubating_rules.yaml` +
+  `falco-sandbox_rules.yaml`. Category from `mitre_<tactic>` tags (fallback
+  to context tags like `network`/`filesystem`/`container`); MITRE IDs from
+  `T####`/`T####.###` tags; severity from `priority`
+  (CRITICAL/ERROR/WARNING/NOTICE/INFO → critical/high/medium/low/informational);
+  `enabled: false` rules marked `experimental`.
 - **No viable source found — Cloudflare WAF rules** — GitHub search turned
   up only automation/tooling repos (IP blockers, bot-detection workers), not
   rule corpora. Revisit if one surfaces later.

@@ -2,6 +2,7 @@ import type { RuleImporter } from "./types";
 import { sigmaImporter } from "./sigma";
 import { splunkImporter } from "./splunk";
 import { azureSentinelImporter } from "./azure-sentinel";
+import { falcoImporter } from "./falco";
 
 /**
  * All registered rule importers, keyed by their `id` (the CLI argument for
@@ -13,4 +14,5 @@ export const importerRegistry: Record<string, RuleImporter> = {
   [sigmaImporter.id]: sigmaImporter,
   [splunkImporter.id]: splunkImporter,
   [azureSentinelImporter.id]: azureSentinelImporter,
+  [falcoImporter.id]: falcoImporter,
 };
