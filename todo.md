@@ -16,6 +16,12 @@ that are out of scope for now but worth revisiting. Not prioritized.
   rule sets target malware family detection rather than the
   category/MITRE-tactic taxonomy used here, so category-mapping heuristics
   will need their own pass.
+- Sigma category-mapping heuristic is heavily skewed: ~1,440 of ~3,300
+  imported rules landed in "Insider Threat & Anomalous Behavior" (the
+  fallback bucket) and "Initial Access" has zero rules. Revisit the
+  ATT&CK-tactic-tag → category lookup table in the Sigma importer to better
+  distribute rules tagged with tactics like `attack.initial_access`,
+  `attack.discovery`, etc.
 - Re-import cadence: Sigma's `rules-emerging-threats/`/`rules-compliance/`
   (imported via `--include-emerging`) update frequently upstream. Consider a
   periodic re-import job or at least a documented manual cadence, plus a
