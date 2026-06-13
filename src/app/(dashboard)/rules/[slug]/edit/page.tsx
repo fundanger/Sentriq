@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { auth } from "@/lib/auth";
 import { canManageRules } from "@/lib/permissions";
 import { detectionRules } from "@/db/schema";
+import { getOrderedCategories } from "@/lib/categories";
 import { Button } from "@/components/ui/button";
 import { RuleForm, type RuleFormDefaults } from "@/components/rules/rule-form";
 import { updateRuleAction, deleteRuleAction } from "@/actions/rules";
@@ -30,9 +31,7 @@ export default async function EditRulePage({ params }: EditRulePageProps) {
         mitreMappings: true,
       },
     }),
-    db.query.categories.findMany({
-      orderBy: (c, { asc }) => [asc(c.sortOrder)],
-    }),
+    getOrderedCategories(),
     db.query.mitreTechniques.findMany({
       orderBy: (t, { asc }) => [asc(t.id)],
     }),

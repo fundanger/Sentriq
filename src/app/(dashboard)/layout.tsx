@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
@@ -10,6 +9,7 @@ import { AiChatDrawer } from "@/components/ai/ai-chat-drawer";
 import { PageTransition } from "@/components/layout/page-transition";
 import { KeyboardShortcuts } from "@/components/layout/keyboard-shortcuts";
 import { getPlatformSettings } from "@/lib/platform-settings";
+import { getOrderedCategories } from "@/lib/categories";
 
 export default async function DashboardLayout({
   children,
@@ -22,9 +22,7 @@ export default async function DashboardLayout({
   }
 
   const [categories, platformSettings] = await Promise.all([
-    db.query.categories.findMany({
-      orderBy: (c, { asc }) => [asc(c.sortOrder)],
-    }),
+    getOrderedCategories(),
     getPlatformSettings(),
   ]);
 

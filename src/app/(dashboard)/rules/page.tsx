@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { auth } from "@/lib/auth";
 import { canManageRules } from "@/lib/permissions";
 import { detectionRules, categories } from "@/db/schema";
+import { getOrderedCategories } from "@/lib/categories";
 import { Button } from "@/components/ui/button";
 import { RuleFilters } from "@/components/rules/rule-filters";
 import { RuleCard } from "@/components/rules/rule-card";
@@ -90,9 +91,7 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
       offset: (page - 1) * PAGE_SIZE,
       with: { primaryCategory: true, source: true },
     }),
-    db.query.categories.findMany({
-      orderBy: (c, { asc }) => [asc(c.sortOrder)],
-    }),
+    getOrderedCategories(),
     db.select({ value: count() }).from(detectionRules).where(where),
   ]);
 
