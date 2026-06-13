@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { getDashboardData } from "@/lib/dashboard-data";
@@ -5,12 +6,25 @@ import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { normalizeDashboardLayout } from "@/components/dashboard/widget-registry";
 import { QuickActionsWidget } from "@/components/dashboard/widgets/quick-actions-widget";
 import { LanguageBreakdownWidget } from "@/components/dashboard/widgets/language-breakdown-widget";
-import { SeverityDistributionWidget } from "@/components/dashboard/widgets/severity-distribution-widget";
 import { CategoryBreakdownWidget } from "@/components/dashboard/widgets/category-breakdown-widget";
-import { MitreCoverageWidget } from "@/components/dashboard/widgets/mitre-coverage-widget";
 import { RecentRulesWidget } from "@/components/dashboard/widgets/recent-rules-widget";
 import { RecentlyViewedWidget } from "@/components/dashboard/widgets/recently-viewed-widget";
+import { ChartWidgetSkeleton } from "@/components/dashboard/widgets/chart-widget-skeleton";
 import { DETECTION_LANGUAGES } from "@/lib/constants";
+
+const SeverityDistributionWidget = dynamic(() =>
+  import("@/components/dashboard/widgets/severity-distribution-widget").then(
+    (mod) => mod.SeverityDistributionWidget
+  ),
+  { loading: () => <ChartWidgetSkeleton /> }
+);
+
+const MitreCoverageWidget = dynamic(() =>
+  import("@/components/dashboard/widgets/mitre-coverage-widget").then(
+    (mod) => mod.MitreCoverageWidget
+  ),
+  { loading: () => <ChartWidgetSkeleton /> }
+);
 
 export default async function DashboardPage() {
   const session = await auth();
