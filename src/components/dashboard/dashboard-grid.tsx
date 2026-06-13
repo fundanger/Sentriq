@@ -1,38 +1,22 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Settings2, RotateCcw, Check } from "lucide-react";
+import { Settings2, RotateCcw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Card } from "@/components/ui/card";
 import {
   saveDashboardLayoutAction,
   resetDashboardLayoutAction,
 } from "@/actions/dashboard";
-import {
-  WIDGET_TITLES,
-  type WidgetId,
-} from "@/components/dashboard/widget-registry";
+import type { WidgetId } from "@/components/dashboard/widget-registry";
 import type { DashboardWidgetLayout } from "@/db/schema";
-import { cn } from "@/lib/utils";
+
+const DashboardCustomizePanel = dynamic(() =>
+  import("@/components/dashboard/dashboard-customize-panel").then(
+    (mod) => mod.DashboardCustomizePanel
+  )
+);
 
 const WIDGET_SPAN: Record<WidgetId, string> = {
   quick_actions: "lg:col-span-2",
@@ -53,22 +37,6 @@ export function DashboardGrid({ layout, widgets }: DashboardGridProps) {
   const [items, setItems] = useState(layout);
   const [customizing, setCustomizing] = useState(false);
   const [isPending, startTransition] = useTransition();
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    setItems((prev) => {
-      const oldIndex = prev.findIndex((i) => i.widgetId === active.id);
-      const newIndex = prev.findIndex((i) => i.widgetId === over.id);
-      return arrayMove(prev, oldIndex, newIndex);
-    });
-  }
 
   function toggleVisible(widgetId: string) {
     setItems((prev) =>
@@ -117,28 +85,11 @@ export function DashboardGrid({ layout, widgets }: DashboardGridProps) {
       </div>
 
       {customizing ? (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={items.map((i) => i.widgetId)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="flex flex-col gap-2">
-              {items.map((entry) => (
-                <SortableRow
-                  key={entry.widgetId}
-                  id={entry.widgetId}
-                  title={WIDGET_TITLES[entry.widgetId as WidgetId]}
-                  visible={entry.visible}
-                  onToggle={() => toggleVisible(entry.widgetId)}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+        <DashboardCustomizePanel
+          items={items}
+          onReorder={setItems}
+          onToggleVisible={toggleVisible}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
           <AnimatePresence initial={false}>
@@ -159,47 +110,5 @@ export function DashboardGrid({ layout, widgets }: DashboardGridProps) {
         </div>
       )}
     </div>
-  );
-}
-
-function SortableRow({
-  id,
-  title,
-  visible,
-  onToggle,
-}: {
-  id: string;
-  title: string;
-  visible: boolean;
-  onToggle: () => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "flex flex-row items-center gap-3 p-3",
-        isDragging && "z-10 shadow-lg"
-      )}
-    >
-      <button
-        type="button"
-        className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="size-4" />
-      </button>
-      <span className="flex-1 text-sm font-medium">{title}</span>
-      <Switch checked={visible} onCheckedChange={onToggle} />
-    </Card>
   );
 }
