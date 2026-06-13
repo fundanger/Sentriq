@@ -646,4 +646,273 @@ DeviceNetworkEvents
       },
     ],
   },
+
+  // --- Server-Side Template Injection (SSTI) ---
+  {
+    family: {
+      id: "fam-server-side-template-injection",
+      name: "Server-Side Template Injection (SSTI) Attempt",
+      slug: "server-side-template-injection-attempt",
+      categoryId: "cat-web-attacks",
+      conceptDescription:
+        "Server-Side Template Injection (SSTI) occurs when user-controlled input is embedded into a server-side template (Jinja2, Twig, Freemarker, Velocity, Smarty, Handlebars, etc.) and then rendered/evaluated by the templating engine, rather than being treated as inert data. Because templating engines are designed to execute logic - loops, conditionals, expressions, and in many cases arbitrary method calls on objects in scope - an attacker who can inject template syntax can often escape the intended sandbox and reach full remote code execution. The canonical example is a Flask/Jinja2 application that does `render_template_string(f\"Hello {user_input}\")` instead of passing `user_input` as a template variable: an attacker submitting `{{7*7}}` sees `49` reflected back (confirming injection), and can escalate to `{{ self.__init__.__globals__.__builtins__.__import__('os').popen('id').read() }}` or similar Python-object-traversal payloads to achieve OS command execution.\n\nSSTI is distinct from (and often confused with) Cross-Site Scripting (XSS): XSS payloads execute in the victim's browser, while SSTI payloads execute on the server itself, making SSTI typically far more severe - it's frequently a direct path to full server compromise rather than session/credential theft. SSTI most commonly arises in features that appear to need 'template-like' customization: custom email/notification templates, PDF/report generation with user-supplied formatting, search result 'did you mean' or error-message templates that echo user input, and any feature where an application advertises support for a templating mini-language to end users.\n\nDetection focuses on identifying template-engine-specific syntax delimiters (`{{ }}`, `{% %}`, `${ }`, `<#...#>`, `[% %]`) appearing in request parameters, especially when combined with method-chaining/attribute-access patterns characteristic of sandbox-escape payloads (`__class__`, `__globals__`, `__builtins__`, `__mro__`, `__subclasses__`, `config.items`, `self.__init__`) - these dunder/reflection-style attribute names have no legitimate use in normal form input and are the signature of SSTI exploitation tooling (tplmap, payloads from PayloadsAllTheThings) probing for which template engine is in use and attempting sandbox escape.",
+    },
+    variants: [
+      {
+        id: "rule-ssti-sigma",
+        language: "sigma",
+        platformVariant: "Web Server Access Logs",
+        title: "Server-Side Template Injection (SSTI) Payload Patterns in Request Parameters",
+        slug: "ssti-payload-patterns-sigma",
+        descriptionSummary:
+          "Detects template-engine delimiter syntax ({{ }}, {% %}, ${ }) combined with Python/Java reflection-style attribute access (__class__, __globals__, __builtins__) in HTTP request query strings or bodies - the signature of SSTI sandbox-escape probing.",
+        ruleBody: `title: Server-Side Template Injection (SSTI) Payload in Request
+id: 5d7e9f1a-3c5b-4d7e-9f1a-3c5b4d7e9f1a
+status: stable
+description: |
+    Detects HTTP requests containing server-side templating engine delimiters
+    (Jinja2/Twig {{ }} or {% %}, Freemarker/Velocity \${ } or <# #>) combined
+    with reflection/sandbox-escape attribute names (__class__, __globals__,
+    __builtins__, __mro__, __subclasses__, getClass, forName) - the signature
+    of SSTI exploitation tooling (tplmap and similar) probing for or
+    exploiting a server-side template injection vulnerability.
+references:
+    - https://portswigger.net/research/server-side-template-injection
+    - https://attack.mitre.org/techniques/T1190/
+author: Sentriq Detection Engineering
+date: 2026-06-11
+tags:
+    - attack.initial-access
+    - attack.t1190
+    - attack.execution
+logsource:
+    category: webserver
+detection:
+    selection_delimiter:
+        cs-uri-query|contains:
+            - '{{'
+            - '{%'
+            - '\${'
+            - '<#'
+            - '[%'
+    selection_escape_pattern:
+        cs-uri-query|contains:
+            - '__class__'
+            - '__globals__'
+            - '__builtins__'
+            - '__mro__'
+            - '__subclasses__'
+            - '__init__'
+            - 'getClass()'
+            - 'forName('
+            - 'self.__'
+            - 'config.items'
+    condition: selection_delimiter and selection_escape_pattern
+falsepositives:
+    - Applications that legitimately accept and reflect JSON or code snippets
+      (API documentation tools, online code editors/playgrounds, JSON-based
+      configuration UIs) may contain similar-looking syntax in normal
+      payloads - scope this rule to endpoints that do not expect such input,
+      or pair with response-code/response-size anomaly detection.
+    - Authorized SSTI testing during a web application penetration test will
+      trigger this rule by design.
+level: high`,
+        ruleFormatVersion: "Sigma Rule (YAML)",
+        severity: "high",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "The combination of template delimiters AND reflection/dunder attribute names is rarely produced by normal application traffic - the most likely false-positive sources are developer tools (API playgrounds, GraphQL explorers, code-snippet sharing features) that legitimately pass code-like strings through request parameters, and authorized security testing (pentests, bug bounty researchers, internal red team SSTI probes using tplmap). For applications that legitimately accept template-like syntax as a feature (e.g., a notification-template editor for end users), scope this rule to exclude that specific endpoint and instead apply a tighter, application-specific allowlist of permitted template variables for that feature. A confirmed match outside of a known testing window should be investigated for evidence of successful exploitation - check application error logs for template-engine stack traces and outbound process-execution telemetry on the web server shortly after the request.",
+        dataSourceRequirements:
+          "Web server or reverse-proxy access logs with the full request query string and, ideally, request body captured (cs-uri-query / request body fields).",
+        mitreTechniqueIds: ["T1190"],
+        cveIds: [],
+        tags: ["SSTI", "Template Injection", "RCE", "Jinja2", "Java"],
+        references: [
+          {
+            url: "https://portswigger.net/research/server-side-template-injection",
+            title: "PortSwigger Research - Server-Side Template Injection",
+            referenceType: "blog_post",
+          },
+          {
+            url: "https://attack.mitre.org/techniques/T1190/",
+            title: "MITRE ATT&CK - Exploit Public-Facing Application",
+            referenceType: "mitre_page",
+          },
+        ],
+      },
+      {
+        id: "rule-ssti-cloudflare",
+        language: "cloudflare",
+        platformVariant: "WAF Custom Rule",
+        title: "Block Server-Side Template Injection (SSTI) Sandbox-Escape Payloads",
+        slug: "ssti-sandbox-escape-cloudflare",
+        descriptionSummary:
+          "Cloudflare WAF custom rule blocking requests containing template-engine delimiters combined with Python/Java reflection-style sandbox-escape attribute names, indicative of SSTI exploitation attempts.",
+        ruleBody: `# Cloudflare WAF Custom Rule Expression
+# Action: Managed Challenge (recommended initial rollout) or Block
+# Field: Custom rule expression (Security -> WAF -> Custom rules)
+
+(
+  (
+    http.request.uri.query contains "{{" or
+    http.request.uri.query contains "{%" or
+    http.request.body.raw contains "{{" or
+    http.request.body.raw contains "{%"
+  )
+  and
+  (
+    http.request.uri.query contains "__class__" or
+    http.request.uri.query contains "__globals__" or
+    http.request.uri.query contains "__builtins__" or
+    http.request.uri.query contains "__mro__" or
+    http.request.uri.query contains "__subclasses__" or
+    http.request.uri.query contains "config.items" or
+    http.request.body.raw contains "__class__" or
+    http.request.body.raw contains "__globals__" or
+    http.request.body.raw contains "__builtins__" or
+    http.request.body.raw contains "__mro__" or
+    http.request.body.raw contains "__subclasses__" or
+    http.request.body.raw contains "config.items"
+  )
+)
+and not (ip.src in $known_scanner_allowlist)`,
+        ruleFormatVersion: "Cloudflare WAF Custom Rules (Wirefilter syntax)",
+        severity: "high",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "As with the Sigma variant, the main false-positive sources are developer-facing features that legitimately accept code-like syntax (API explorers, template editors) and authorized security testing. Deploy in Managed Challenge or Log-only mode first for any application with developer-tooling or template-customization features, and review matches before moving to Block. Maintain `$known_scanner_allowlist` for authorized pentest/bug-bounty source IPs during testing windows.",
+        dataSourceRequirements:
+          "Cloudflare WAF / Firewall Rules enabled on the zone, with query string and request body inspection (body inspection requires appropriate plan tier).",
+        mitreTechniqueIds: ["T1190"],
+        cveIds: [],
+        tags: ["SSTI", "Template Injection", "RCE", "WAF"],
+        references: [
+          {
+            url: "https://portswigger.net/research/server-side-template-injection",
+            title: "PortSwigger Research - Server-Side Template Injection",
+            referenceType: "blog_post",
+          },
+          {
+            url: "https://attack.mitre.org/techniques/T1190/",
+            title: "MITRE ATT&CK - Exploit Public-Facing Application",
+            referenceType: "mitre_page",
+          },
+        ],
+      },
+    ],
+  },
+
+  // --- Path Traversal / Local File Inclusion (LFI) ---
+  {
+    family: {
+      id: "fam-path-traversal-lfi",
+      name: "Path Traversal / Local File Inclusion (LFI) Attempt",
+      slug: "path-traversal-local-file-inclusion-attempt",
+      categoryId: "cat-web-attacks",
+      conceptDescription:
+        "Path traversal (also called directory traversal) and Local File Inclusion (LFI) vulnerabilities occur when an application accepts a filename or path component as user input and uses it to access the filesystem - reading a file for display/download, or in LFI's case, including/executing it as code - without adequately validating that the resulting path stays within an intended directory. The classic exploitation pattern uses `../` (or its URL-encoded forms `%2e%2e%2f`, `%2e%2e/`, `..%2f`, double-encoded `%252e%252e%252f`, or backslash variants `..\\` on Windows) sequences to escape the intended directory and reach arbitrary files - `/download?file=../../../../etc/passwd` being the textbook example for Linux targets, or `..\\..\\..\\windows\\win.ini` on Windows.\n\nThe impact ranges from information disclosure (reading `/etc/passwd`, application configuration files containing database credentials, `.env` files, SSH private keys, or source code) to full remote code execution in LFI scenarios where the included file is then *executed* as code (PHP's `include()`/`require()` being the most common vector) - in this case, an attacker can often achieve RCE by 'including' a file they've influenced the content of, such as an uploaded image containing embedded PHP code, a log file poisoned with PHP via a crafted User-Agent or other logged header, or even `/proc/self/environ` on Linux (which contains environment variables including any the attacker can influence, like User-Agent, and is executable when included by PHP).\n\nDetection focuses on identifying traversal sequences (in both raw and URL-encoded/double-encoded forms) within request parameters that are commonly used for file-path purposes (parameters named `file`, `path`, `page`, `template`, `include`, `doc`, `filename`, or similar), as well as direct requests for well-known sensitive file targets (`/etc/passwd`, `/etc/shadow`, `win.ini`, `boot.ini`, `.env`, `web.config`, `wp-config.php`) appearing anywhere in the request - the presence of these specific filenames in a request to a web application (which should never need to reference them) is itself a strong indicator of LFI probing, independent of whether traversal sequences are also present (some LFI vulnerabilities don't require traversal at all if the vulnerable parameter already points into a directory near the target).",
+    },
+    variants: [
+      {
+        id: "rule-path-traversal-elastic",
+        language: "elastic",
+        platformVariant: "ES|QL / Web Server Access Logs",
+        title: "Path Traversal Sequences or Sensitive File Targets in Web Request Parameters",
+        slug: "path-traversal-lfi-request-parameters-elastic",
+        descriptionSummary:
+          "ES|QL query identifying web requests containing directory traversal sequences (../, URL-encoded variants) or direct references to sensitive file targets (/etc/passwd, web.config, .env, wp-config.php) in the URL, indicating path traversal or LFI exploitation attempts.",
+        ruleBody: `// Path Traversal / LFI detection over web server access logs
+// Data source: logs-* (web access logs with url.path / url.query mapped)
+FROM logs-*
+| WHERE @timestamp > NOW() - 1 DAY
+| WHERE
+    url.original RLIKE ".*(\\\\.\\\\.[\\\\/\\\\\\\\]|%2e%2e%2f|%2e%2e/|\\\\.\\\\.%2f|%252e%252e%252f).*"
+    OR url.original RLIKE "(?i).*(etc/passwd|etc/shadow|win\\\\.ini|boot\\\\.ini|web\\\\.config|wp-config\\\\.php|\\\\.env|proc/self/environ).*"
+| EVAL traversal_pattern = url.original RLIKE ".*(\\\\.\\\\.[\\\\/\\\\\\\\]|%2e%2e%2f|%2e%2e/|\\\\.\\\\.%2f|%252e%252e%252f).*"
+| EVAL sensitive_target = url.original RLIKE "(?i).*(etc/passwd|etc/shadow|win\\\\.ini|boot\\\\.ini|web\\\\.config|wp-config\\\\.php|\\\\.env|proc/self/environ).*"
+| KEEP @timestamp, source.ip, destination.ip, url.original, http.response.status_code, traversal_pattern, sensitive_target
+| SORT @timestamp DESC`,
+        ruleFormatVersion: "Elastic ES|QL",
+        severity: "high",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "Some legitimate applications use literal `..` in non-path contexts (date ranges like `2024..2025` in query parameters, mathematical/comparison expressions in search syntax) - these will not match the traversal regex, which specifically requires `..` followed by a path separator or its encoded equivalent, but verify against your application's URL conventions if false positives occur. Direct requests for sensitive filenames (`/etc/passwd`, `wp-config.php`, etc.) have essentially no legitimate use case in application traffic and should be treated as high-confidence scanning/exploitation regardless of traversal-sequence presence. A `http.response.status_code` of 200 on a sensitive-target match is significantly more concerning than a 403/404 - prioritize triage of 200-response matches, as these may indicate successful file disclosure rather than a blocked/failed attempt.",
+        dataSourceRequirements:
+          "Web server or reverse-proxy access logs ingested into an Elasticsearch logs-* data stream with url.original and http.response.status_code fields populated (standard with Elastic's web log integrations).",
+        mitreTechniqueIds: ["T1190", "T1083", "T1552.001"],
+        cveIds: [],
+        tags: ["Path Traversal", "LFI", "Directory Traversal", "Information Disclosure"],
+        references: [
+          {
+            url: "https://attack.mitre.org/techniques/T1190/",
+            title: "MITRE ATT&CK - Exploit Public-Facing Application",
+            referenceType: "mitre_page",
+          },
+          {
+            url: "https://owasp.org/www-community/attacks/Path_Traversal",
+            title: "OWASP - Path Traversal",
+            referenceType: "documentation",
+          },
+        ],
+      },
+      {
+        id: "rule-path-traversal-cloudflare",
+        language: "cloudflare",
+        platformVariant: "WAF Custom Rule",
+        title: "Block Path Traversal Sequences and Sensitive File Path Requests",
+        slug: "path-traversal-lfi-cloudflare",
+        descriptionSummary:
+          "Cloudflare WAF custom rule blocking requests containing directory traversal sequences (../, URL-encoded variants, backslash forms) or direct references to sensitive file targets such as /etc/passwd, wp-config.php, or .env.",
+        ruleBody: `# Cloudflare WAF Custom Rule Expression
+# Action: Block
+# Field: Custom rule expression (Security -> WAF -> Custom rules)
+
+(
+  http.request.uri.path contains "../" or
+  http.request.uri.path contains "..\\\\" or
+  http.request.uri.query contains "../" or
+  http.request.uri.query contains "..%2f" or
+  http.request.uri.query contains "%2e%2e%2f" or
+  http.request.uri.query contains "%252e%252e%252f" or
+  http.request.uri contains "etc/passwd" or
+  http.request.uri contains "etc/shadow" or
+  http.request.uri contains "wp-config.php" or
+  http.request.uri contains "web.config" or
+  http.request.uri contains "win.ini" or
+  http.request.uri contains "proc/self/environ"
+)
+and not (ip.src in $known_scanner_allowlist)`,
+        ruleFormatVersion: "Cloudflare WAF Custom Rules (Wirefilter syntax)",
+        severity: "high",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.1",
+        falsePositiveNotes:
+          "Applications that legitimately use `..` in query parameter values for non-path purposes (range expressions, version comparisons) are uncommon but possible - if encountered, narrow the `../`/`..\\\\` clauses to `http.request.uri.path` only (where literal traversal sequences have no legitimate purpose) and drop the broader `http.request.uri.query` traversal checks for that specific application, relying on the sensitive-filename checks (which remain low-FP regardless) as the primary signal. As with other WAF rules in this library, maintain `$known_scanner_allowlist` for authorized vulnerability scanning and pentest source IPs.",
+        dataSourceRequirements:
+          "Cloudflare WAF / Firewall Rules enabled on the zone, inspecting the request URI path and query string.",
+        mitreTechniqueIds: ["T1190", "T1083"],
+        cveIds: [],
+        tags: ["Path Traversal", "LFI", "Directory Traversal", "WAF"],
+        references: [
+          {
+            url: "https://attack.mitre.org/techniques/T1190/",
+            title: "MITRE ATT&CK - Exploit Public-Facing Application",
+            referenceType: "mitre_page",
+          },
+          {
+            url: "https://owasp.org/www-community/attacks/Path_Traversal",
+            title: "OWASP - Path Traversal",
+            referenceType: "documentation",
+          },
+        ],
+      },
+    ],
+  },
 ];

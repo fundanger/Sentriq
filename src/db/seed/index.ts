@@ -27,6 +27,7 @@ import { ransomwareRules } from "./rules/ransomware";
 import { cloudSaasRules } from "./rules/cloudSaas";
 import { reconAndC2Rules } from "./rules/reconAndC2";
 import { supplyChainRules } from "./rules/supplyChain";
+import { cveExploitationRules } from "./rules/cveExploitation";
 import type { RuleSeed } from "./types";
 
 const allRuleSeeds: RuleSeed[] = [
@@ -40,6 +41,7 @@ const allRuleSeeds: RuleSeed[] = [
   ...cloudSaasRules,
   ...reconAndC2Rules,
   ...supplyChainRules,
+  ...cveExploitationRules,
 ];
 
 function slugify(value: string): string {

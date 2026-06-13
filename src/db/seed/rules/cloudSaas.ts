@@ -355,4 +355,193 @@ eventName IN (
       },
     ],
   },
+
+  // --- Cloud Storage Bucket/Container Made Publicly Accessible ---
+  {
+    family: {
+      id: "fam-public-storage-bucket-exposure",
+      name: "Cloud Storage Bucket or Container Made Publicly Accessible",
+      slug: "public-storage-bucket-exposure",
+      categoryId: "cat-cloud-saas",
+      conceptDescription:
+        "One of the most common - and most damaging - cloud misconfigurations is a storage bucket (AWS S3) or blob container (Azure Storage) being changed from private to publicly readable (or writable), either through a deliberate-but-mistaken configuration change, a misconfigured Infrastructure-as-Code template, or an attacker who has gained sufficient permissions deliberately exposing data for exfiltration. Once a bucket/container is public, anyone with the URL - including automated scanners that continuously enumerate cloud storage namespaces - can read (or in worse cases, write/overwrite) its contents without any authentication, often without the owning organization noticing for months. High-profile breaches involving exposed S3 buckets (containing customer PII, source code, credentials, and backups) are reported on a near-monthly basis and remain one of the highest-frequency root causes of large-scale data exposure incidents.\n\nIn AWS, a bucket becomes public through one of several mechanisms: a bucket ACL granting access to the `AllUsers` or `AuthenticatedUsers` (any AWS account, not just the owner's) special groups, or a bucket policy with a `Principal: \"*\"` statement and an `Allow` effect that isn't scoped down by a condition. AWS's `PutBucketAcl`, `PutBucketPolicy`, and `PutPublicAccessBlock` (specifically, *disabling* public access block settings) CloudTrail events are the key signals. In Azure, the equivalent is a Storage Account's blob container `publicAccess` level being set to `Container` or `Blob` (instead of the default `None`), visible via `Microsoft.Storage/storageAccounts/blobServices/containers/write` operations in Activity Logs where the request body shows a `publicAccess` field change.\n\nDetection should fire on the configuration-change event itself (the moment a bucket/container transitions to public) rather than waiting to observe actual external access, since by the time external access is observed the data may already be exfiltrated and the time-to-detection matters enormously - cloud storage scanners operate continuously and can discover a newly-public bucket within minutes. A secondary detection layer (not covered by this rule) is periodic configuration drift scanning (AWS Config rules like `s3-bucket-public-read-prohibited`, Azure Policy), which catches buckets that were already public at the time scanning began rather than newly-changed ones - this rule complements that by catching the *change event* in near real time.",
+    },
+    variants: [
+      {
+        id: "rule-public-s3-bucket-kql",
+        language: "kql",
+        platformVariant: "Microsoft Sentinel / AWS CloudTrail",
+        title: "AWS S3 Bucket ACL or Policy Changed to Allow Public Access",
+        slug: "aws-s3-bucket-public-access-change-kql",
+        descriptionSummary:
+          "Detects CloudTrail PutBucketAcl, PutBucketPolicy, and PutPublicAccessBlock events that grant AllUsers/AuthenticatedUsers access or disable an S3 bucket's public access block settings, indicating the bucket has been made publicly accessible.",
+        ruleBody: `// AWS S3 public-exposure detection over ingested CloudTrail logs
+// Data source: AWSCloudTrail table (Sentinel AWS S3 connector)
+AWSCloudTrail
+| where TimeGenerated >= ago(1d)
+| where EventName in ("PutBucketAcl", "PutBucketPolicy", "PutPublicAccessBlock", "DeleteBucketPolicy")
+| extend RequestParams = parse_json(RequestParameters)
+| extend
+    BucketName = tostring(RequestParams.bucketName),
+    AclXml = tostring(RequestParams.AccessControlPolicy),
+    PolicyJson = tostring(RequestParams.bucketPolicy),
+    PublicAccessBlockConfig = parse_json(tostring(RequestParams.PublicAccessBlockConfiguration))
+| extend
+    GrantsAllUsers = AclXml has_any ("AllUsers", "AuthenticatedUsers")
+                      or PolicyJson has "\\"Principal\\":\\"*\\""
+                      or PolicyJson has "\\"Principal\\": \\"*\\"",
+    PublicAccessBlockDisabled = EventName == "PutPublicAccessBlock"
+                      and (PublicAccessBlockConfig.BlockPublicAcls == false
+                           or PublicAccessBlockConfig.BlockPublicPolicy == false
+                           or PublicAccessBlockConfig.RestrictPublicBuckets == false)
+| where GrantsAllUsers or PublicAccessBlockDisabled or EventName == "DeleteBucketPolicy"
+| extend
+    AccountCustomEntity = UserIdentityArn,
+    Verdict = strcat("S3 bucket '", BucketName, "' modified via ", EventName, " - possible public exposure")
+| project TimeGenerated, UserIdentityArn, SourceIpAddress, EventName, BucketName, GrantsAllUsers, PublicAccessBlockDisabled, Verdict
+| order by TimeGenerated desc`,
+        ruleFormatVersion: "Sentinel Analytics Rule (KQL)",
+        severity: "critical",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "Some legitimate use cases genuinely require public S3 buckets - static website hosting, public software/package distribution, public datasets. The goal of this rule is not to forbid public buckets outright but to ensure every transition to public is reviewed and intentional: maintain an allowlist of bucket names/ARNs that are approved for public access (static asset/CDN-origin buckets) and suppress alerts for changes to those specific buckets, while alerting on ANY other bucket transitioning to public. Infrastructure-as-Code pipelines (Terraform/CloudFormation) that legitimately manage bucket policies as code will also trigger this - if `UserIdentityArn` matches a known IaC deployment role AND the resulting bucket is on the approved-public allowlist, this can be auto-suppressed; IaC changes to non-allowlisted buckets should still alert, since IaC misconfigurations are a common root cause of accidental exposure.",
+        dataSourceRequirements:
+          "AWS CloudTrail management events ingested into the AWSCloudTrail table via the Sentinel AWS S3 connector, covering S3 data-plane API calls (PutBucketAcl, PutBucketPolicy, PutPublicAccessBlock, DeleteBucketPolicy).",
+        mitreTechniqueIds: ["T1530", "T1098"],
+        cveIds: [],
+        tags: ["AWS", "S3", "Public Exposure", "Misconfiguration", "CloudTrail"],
+        references: [
+          {
+            url: "https://attack.mitre.org/techniques/T1530/",
+            title: "MITRE ATT&CK - Data from Cloud Storage",
+            referenceType: "mitre_page",
+          },
+          {
+            url: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html",
+            title: "AWS - Blocking Public Access to S3 Buckets",
+            referenceType: "documentation",
+          },
+        ],
+      },
+      {
+        id: "rule-public-azure-blob-splunk",
+        language: "splunk",
+        title: "Azure Storage Account Blob Container Public Access Level Changed to Container or Blob",
+        slug: "azure-storage-container-public-access-change-splunk",
+        descriptionSummary:
+          "SPL search over Azure Activity Logs detecting blob container write operations that set publicAccess to 'Container' or 'Blob' (instead of the default 'None'), indicating a storage container has been made anonymously readable.",
+        ruleBody: `\`# Azure Storage public-container exposure detection - Splunk SPL\`
+\`# Detects publicAccess level changes to Container/Blob on Azure Storage containers\`
+
+index=azure_activity_logs sourcetype="azure:activitylogs"
+operationName="MICROSOFT.STORAGE/STORAGEACCOUNTS/BLOBSERVICES/CONTAINERS/WRITE"
+| spath input=properties.requestbody output=public_access path="publicAccess"
+| where public_access="Container" OR public_access="Blob"
+| eval storage_account=mvindex(split(resourceId, "/"), 8)
+| eval container_name=mvindex(split(resourceId, "/"), -1)
+| eval severity=if(public_access="Container", "critical", "high")
+| table _time, caller, storage_account, container_name, public_access, severity, resourceId
+| sort - _time`,
+        ruleFormatVersion: "SPL (Search Processing Language)",
+        severity: "critical",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "As with the AWS S3 variant, some Azure Storage containers are intentionally public (static website hosting via `$web` containers, public CDN origins, public dataset distribution). Maintain an allowlist of storage account/container name pairs approved for public access and exclude those from alerting; any other container transitioning to `Container` (anonymous read for both container metadata and blobs - the more severe of the two settings) or `Blob` (anonymous read for blobs only, container listing still private) should alert. `public_access=\"Container\"` is rated critical because it additionally allows anonymous enumeration of all blob names in the container, which often reveals sensitive file naming conventions even if individual blob contents were intended to be discoverable only via direct (unguessable) links.",
+        dataSourceRequirements:
+          "Azure Activity Logs (subscription-level, Microsoft.Storage resource provider operations) ingested into Splunk via the Azure Monitor Add-on, with the request body captured for blob container write operations.",
+        mitreTechniqueIds: ["T1530", "T1098"],
+        cveIds: [],
+        tags: ["Azure", "Storage Account", "Public Exposure", "Misconfiguration", "Activity Log"],
+        references: [
+          {
+            url: "https://attack.mitre.org/techniques/T1530/",
+            title: "MITRE ATT&CK - Data from Cloud Storage",
+            referenceType: "mitre_page",
+          },
+          {
+            url: "https://learn.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent",
+            title: "Microsoft - Prevent Anonymous Public Read Access to Containers and Blobs",
+            referenceType: "documentation",
+          },
+        ],
+      },
+    ],
+  },
+
+  // --- New Federated Identity Provider / Domain Federation Trust Added ---
+  {
+    family: {
+      id: "fam-federation-trust-modification",
+      name: "New Federated Identity Provider or Domain Federation Trust Added to Tenant",
+      slug: "federation-trust-modification",
+      categoryId: "cat-cloud-saas",
+      conceptDescription:
+        "Domain federation trust modification is a high-impact persistence and privilege-escalation technique against cloud identity tenants (most notably Microsoft Entra ID, but the same class of attack applies to any SAML/OIDC-federated SaaS identity provider). When an attacker with sufficient privileges (Global Administrator, or Hybrid Identity Administrator in Entra ID) configures a domain within the tenant to trust an attacker-controlled SAML identity provider - or modifies an existing federation trust's signing certificate/metadata to one the attacker controls - they gain the ability to forge SAML tokens asserting ANY identity in that domain, including highly-privileged accounts, without needing that account's actual credentials or MFA. This is conceptually similar to a 'Golden SAML' attack but achieved by directly manipulating the federation configuration rather than stealing an existing signing key.\n\nThe canonical real-world example is the technique used in several documented nation-state intrusions: an attacker who compromises Global Admin (often via a separate initial-access vector) runs `Update-MgDomain` / `New-MgDomainFederationConfiguration` (or the legacy `Update-MSOLFederatedDomain` / `Set-MsolDomainAuthentication` cmdlets) to convert a verified domain from 'Managed' to 'Federated' authentication, pointing to an attacker-operated identity provider endpoint. From that point forward, ANY sign-in for users in that domain is redirected to the attacker's IdP, which can mint a valid SAML assertion for any user (including Global Admins) - giving the attacker durable, MFA-bypassing access that survives password resets and persists until the federation configuration is discovered and reverted.\n\nA related, lower-severity but still significant pattern is the addition of a brand-new external identity provider (e.g., adding a new SAML/WS-Fed enterprise application or B2B/B2C identity provider configuration) that wasn't part of the organization's known IdP estate - this can indicate an attacker setting up a parallel authentication path for a subset of accounts/guest users.\n\nDetection focuses on Entra ID audit log events for `Set domain authentication`, `Update domain`, and federation-configuration-specific operations (`Add federation configuration`, `Update federation configuration`), especially where the operation changes a domain's authentication type to 'Federated' or modifies the `IssuerUri`/`MetadataExchangeUri`/signing certificate of an existing federation configuration. Because this is one of the most powerful persistence mechanisms available against a cloud tenant - and legitimate changes to domain federation are EXTREMELY rare (most organizations configure this once, during initial AD FS/hybrid setup, and essentially never touch it again) - any unexpected event of this type should be treated as a near-certain critical incident.",
+    },
+    variants: [
+      {
+        id: "rule-federation-trust-modification-kql",
+        language: "kql",
+        platformVariant: "Microsoft Sentinel / Entra ID",
+        title: "Domain Federation Configuration Added or Modified (Possible Golden SAML Persistence)",
+        slug: "entra-id-domain-federation-config-change-kql",
+        descriptionSummary:
+          "Detects Entra ID audit log events where a domain's authentication type is changed to Federated, or an existing federation configuration's issuer/metadata/signing certificate is modified - a critical persistence technique allowing forged SAML tokens for any user in the domain.",
+        ruleBody: `// Domain federation trust modification detection (Golden SAML-style persistence)
+// Data source: AuditLogs (Entra ID)
+AuditLogs
+| where TimeGenerated >= ago(7d)
+| where OperationName in (
+    "Set domain authentication",
+    "Set federation settings on domain",
+    "Add federation configuration",
+    "Update federation configuration",
+    "Update domain"
+)
+| extend
+    InitiatedByUser = tostring(InitiatedBy.user.userPrincipalName),
+    InitiatedByApp = tostring(InitiatedBy.app.displayName),
+    TargetDomain = tostring(TargetResources[0].displayName)
+| mv-expand ModifiedProperty = TargetResources[0].modifiedProperties
+| extend
+    PropertyName = tostring(ModifiedProperty.displayName),
+    NewValue = tostring(ModifiedProperty.newValue),
+    OldValue = tostring(ModifiedProperty.oldValue)
+| where PropertyName has_any ("AuthenticationType", "IssuerUri", "MetadataExchangeUri", "SigningCertificate", "ActiveLogOnUri", "PassiveLogOnUri", "FederationBrandName")
+| extend
+    AccountCustomEntity = iff(isnotempty(InitiatedByUser), InitiatedByUser, InitiatedByApp),
+    Verdict = strcat("Federation config change on domain '", TargetDomain, "': ", PropertyName, " changed from '", OldValue, "' to '", NewValue, "'")
+| project TimeGenerated, InitiatedByUser, InitiatedByApp, TargetDomain, OperationName, PropertyName, OldValue, NewValue, Verdict
+| order by TimeGenerated desc`,
+        ruleFormatVersion: "Sentinel Analytics Rule (KQL)",
+        severity: "critical",
+        status: "stable",
+        author: "Sentriq Detection Engineering",
+        ruleVersion: "1.0",
+        falsePositiveNotes:
+          "Legitimate domain federation changes are exceptionally rare - typically a one-time event during initial hybrid identity (AD FS / Entra Connect) setup, or a deliberate, planned migration (e.g., moving from AD FS federation to Entra ID Cloud Authentication/Staged Rollout, or onboarding a new acquired company's domain). Any match should be cross-referenced against a documented change ticket; in the absence of one, treat as a critical incident requiring immediate validation of: (1) who initiated the change and whether their account shows other signs of compromise, (2) what the federation now points to (resolve the new IssuerUri/MetadataExchangeUri and confirm it is NOT attacker infrastructure), and (3) auditing all sign-ins for the affected domain since the change for anomalous Global Admin activity. Given the severity, this detection should be tuned for sensitivity (alert on any match) rather than specificity - the rarity of legitimate triggers means false positives are an acceptable cost.",
+        dataSourceRequirements:
+          "Entra ID AuditLogs table with domain/federation management audit events, ingested into Sentinel. Requires Directory audit logging enabled (default for most tenants).",
+        mitreTechniqueIds: ["T1484.002", "T1098.001"],
+        cveIds: [],
+        tags: ["Entra ID", "Federation", "Golden SAML", "Persistence", "AD FS"],
+        references: [
+          {
+            url: "https://attack.mitre.org/techniques/T1484/002/",
+            title: "MITRE ATT&CK - Trust Modification",
+            referenceType: "mitre_page",
+          },
+          {
+            url: "https://learn.microsoft.com/en-us/entra/identity/hybrid/connect/how-to-connect-fed-management",
+            title: "Microsoft - Manage Federated Identity in Entra ID",
+            referenceType: "documentation",
+          },
+        ],
+      },
+    ],
+  },
 ];
