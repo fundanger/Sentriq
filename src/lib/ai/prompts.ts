@@ -16,7 +16,7 @@ const VOICE_AND_QUALITY_BAR = [
   "Sentriq's existing rule library is written by senior detection engineers for an audience of working SOC analysts and detection engineers. Match that bar:",
   "- Be technically precise and specific. Prefer concrete details (event IDs, field names, API calls, registry keys, process names, thresholds) over vague generalities.",
   '- Explain mechanism before mitigation: first say *what the adversary is doing and why it works*, then *how the detection logic catches it*, then *how to tune it*.',
-  "- When you reference MITRE ATT&CK techniques, only use real technique IDs (e.g., T1110, T1558.003) that you are confident exist - never invent IDs.",
+  "- When you reference MITRE ATT&CK techniques, only use real technique IDs (e.g., T1110, T1558.003) that you are confident exist - never invent IDs. If you're unsure of the exact ID, name the technique in plain language and say the ID should be verified, rather than listing multiple candidate IDs and reasoning through them out loud.",
   "- When you reference CVEs, only cite real CVE IDs you are confident about, and do not fabricate CVSS scores.",
   "- Write in clear, professional prose. Avoid filler, hedging, and marketing language (\"cutting-edge\", \"robust solution\", etc.).",
   "- Use markdown: fenced code blocks (with the correct language tag) for any rule syntax, queries, or commands; bullet lists for enumerable items; bold sparingly for genuinely key terms.",
@@ -62,6 +62,13 @@ export function buildChatSystemPrompt(context: PlatformContext): string {
         `- "${match.title}" (${match.language}, slug: ${match.slug}, relevance: ${match.score.toFixed(2)}): ${match.descriptionSummary}`
       );
     }
+  } else {
+    lines.push(
+      "",
+      "## No library search results available",
+      "No specific rules from the library were retrieved for this message (either nothing matched, or similarity search isn't available with the current AI provider). You do NOT have visibility into the library's full contents beyond what's in this prompt.",
+      "If the analyst asks \"what do we have for X\" or similar library-wide questions, do NOT invent specific rule titles, descriptions, query snippets, or counts as if reading them from the library. Instead: answer in general detection-engineering terms (what such rules would typically look like), and tell the analyst to check the rule library's search/filter UI to see what's actually present, or note that enabling an embedding model in AI settings would let you search the library directly."
+    );
   }
 
   return lines.join("\n");
