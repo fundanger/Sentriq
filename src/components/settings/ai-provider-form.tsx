@@ -96,7 +96,7 @@ export function AiProviderForm() {
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="model">Model</Label>
               {providerMeta.models.length > 0 ? (
-                <Select name="model" defaultValue={providerMeta.defaultModel}>
+                <Select key={provider} name="model" defaultValue={providerMeta.defaultModel}>
                   <SelectTrigger id="model" className="w-full" aria-invalid={!!fieldErrors.model}>
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
@@ -145,6 +145,7 @@ export function AiProviderForm() {
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="embeddingModel">Embedding model (optional)</Label>
                 <Select
+                  key={provider}
                   name="embeddingModel"
                   defaultValue={providerMeta.defaultEmbeddingModel}
                 >
