@@ -13,6 +13,7 @@ import {
   ruleSources,
 } from "../../schema";
 import { mitreReferenceUrl } from "../mitre";
+import { mitreExtraTechniques } from "../mitre-extra";
 import type { ImporterOptions, RuleImporter } from "./types";
 
 function slugify(value: string): string {
@@ -24,9 +25,9 @@ function slugify(value: string): string {
 
 /**
  * Inserts any MITRE technique IDs referenced by an import that aren't already
- * seeded, so `rule_mitre_mappings` FK inserts don't fail. Uses a generic
- * "Unknown" tactic placeholder — the technique name/tactic can be backfilled
- * later from the official ATT&CK STIX bundle if desired (see todo.md).
+ * seeded, so `rule_mitre_mappings` FK inserts don't fail. Looks up the real
+ * ATT&CK name/tactic from `mitreExtraTechniques` (sourced from the official
+ * STIX data); falls back to an "Unmapped" placeholder for IDs not found there.
  */
 async function ensureMitreTechniques(techniqueIds: Set<string>) {
   if (techniqueIds.size === 0) return;
@@ -42,12 +43,13 @@ async function ensureMitreTechniques(techniqueIds: Set<string>) {
   console.log(`  Pre-seeding ${missing.length} new MITRE technique(s) referenced by import...`);
   for (const id of missing) {
     const parentTechniqueId = id.includes(".") ? id.split(".")[0] : null;
+    const extra = mitreExtraTechniques[id];
     await db
       .insert(mitreTechniques)
       .values({
         id,
-        name: id,
-        tactic: "Unmapped",
+        name: extra?.name ?? id,
+        tactic: extra?.tactic ?? "Unmapped",
         parentTechniqueId,
         url: mitreReferenceUrl(id),
       })

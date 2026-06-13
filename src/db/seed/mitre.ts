@@ -42,6 +42,8 @@ export const mitreTechniqueSeeds = [
   { id: "T1136.003", name: "Create Account: Cloud Account", tactic: "Persistence", parentTechniqueId: "T1136" },
   { id: "T1543", name: "Create or Modify System Process", tactic: "Persistence", parentTechniqueId: null },
   { id: "T1543.003", name: "Create or Modify System Process: Windows Service", tactic: "Persistence", parentTechniqueId: "T1543" },
+  { id: "T1037", name: "Boot or Logon Initialization Scripts", tactic: "Persistence", parentTechniqueId: null },
+  { id: "T1205", name: "Traffic Signaling", tactic: "Persistence", parentTechniqueId: null },
 
   // Privilege Escalation
   { id: "T1068", name: "Exploitation for Privilege Escalation", tactic: "Privilege Escalation", parentTechniqueId: null },
@@ -66,6 +68,7 @@ export const mitreTechniqueSeeds = [
   { id: "T1140", name: "Deobfuscate/Decode Files or Information", tactic: "Defense Evasion", parentTechniqueId: null },
   { id: "T1620", name: "Reflective Code Loading", tactic: "Defense Evasion", parentTechniqueId: null },
   { id: "T1556", name: "Modify Authentication Process", tactic: "Defense Evasion", parentTechniqueId: null },
+  { id: "T1601", name: "Modify System Image", tactic: "Defense Evasion", parentTechniqueId: null },
 
   // Credential Access
   { id: "T1110", name: "Brute Force", tactic: "Credential Access", parentTechniqueId: null },
@@ -92,6 +95,7 @@ export const mitreTechniqueSeeds = [
   { id: "T1046", name: "Network Service Discovery", tactic: "Discovery", parentTechniqueId: null },
   { id: "T1518", name: "Software Discovery", tactic: "Discovery", parentTechniqueId: null },
   { id: "T1518.001", name: "Software Discovery: Security Software Discovery", tactic: "Discovery", parentTechniqueId: "T1518" },
+  { id: "T1614", name: "System Location Discovery", tactic: "Discovery", parentTechniqueId: null },
 
   // Lateral Movement
   { id: "T1021", name: "Remote Services", tactic: "Lateral Movement", parentTechniqueId: null },
@@ -99,6 +103,7 @@ export const mitreTechniqueSeeds = [
   { id: "T1021.002", name: "Remote Services: SMB/Windows Admin Shares", tactic: "Lateral Movement", parentTechniqueId: "T1021" },
   { id: "T1021.006", name: "Remote Services: Windows Remote Management", tactic: "Lateral Movement", parentTechniqueId: "T1021" },
   { id: "T1570", name: "Lateral Tool Transfer", tactic: "Lateral Movement", parentTechniqueId: null },
+  { id: "T1563", name: "Remote Service Session Hijacking", tactic: "Lateral Movement", parentTechniqueId: null },
   { id: "T1550", name: "Use Alternate Authentication Material", tactic: "Lateral Movement", parentTechniqueId: null },
   { id: "T1550.002", name: "Use Alternate Authentication Material: Pass the Hash", tactic: "Lateral Movement", parentTechniqueId: "T1550" },
   { id: "T1550.003", name: "Use Alternate Authentication Material: Pass the Ticket", tactic: "Lateral Movement", parentTechniqueId: "T1550" },
