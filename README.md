@@ -1,15 +1,18 @@
 # Sentriq
 
-Sentriq is an enterprise-grade threat detection and prevention rule library. It gives security teams a searchable, richly documented catalog of detection rules across seven SIEM/EDR/WAF languages, paired with an AI assistant for explaining, tuning, and drafting new rules.
+Sentriq is an enterprise-grade threat detection and prevention rule library. It gives security teams a searchable, richly documented catalog of detection rules across eight SIEM/EDR/WAF/runtime languages, paired with an AI assistant for explaining, tuning, and drafting new rules.
 
 ## Features
 
-- **Multi-language rule library** — KQL, Sigma, SentinelOne, Cloudflare, Splunk, YARA, and Elastic, browsable and filterable by language and category.
+- **Multi-language rule library** — KQL, Sigma, SentinelOne, Cloudflare, Splunk, YARA, Elastic, and Falco, browsable and filterable by language and category.
 - **14 MITRE ATT&CK-aligned categories** spanning recon through exfiltration, plus cloud/SaaS, insider threat, and CVE-driven coverage.
 - **Deeply documented rules** — each rule includes an attack-technique explanation, a walkthrough of the detection logic, false-positive/tuning guidance, MITRE ATT&CK technique mappings, and CVE/CVSS context where relevant.
-- **AI assistant (BYO LLM key)** — context-aware chat that knows the rule you're viewing, RAG-based search across the whole library, rule explanation/tuning suggestions, and one-click "Generate with AI" drafting for new rules.
+- **Customizable dashboard** — drag-and-drop widgets (language/category/severity breakdowns, MITRE coverage, recent and recently-viewed rules, quick actions) with per-user layout persistence.
+- **AI assistant (BYO LLM key)** — a context-aware chat drawer that knows the rule you're viewing, RAG-based search across the whole library, rule explanation/tuning suggestions, and one-click "Generate with AI" drafting for new rules.
 - **Supported AI providers** — Anthropic, OpenAI, Google Gemini, DeepSeek, or any OpenAI-compatible endpoint. API keys are encrypted at rest (AES-256-GCM) and only decrypted server-side.
-- **Auth & roles** — session-based local auth (Auth.js Credentials provider) with `admin`, `analyst`, and `viewer` roles, plus an SSO scaffold for future OIDC/SAML integration.
+- **Auth & roles** — session-based local auth (Auth.js Credentials provider) with `super_admin`, `admin`, `analyst`, and `viewer` roles. Only `super_admin` can manage AI provider credentials, users, branding, and the SSO scaffold for future OIDC/SAML integration.
+- **Whitelabel branding** — super-admins can customize the site name, accent color, and logo at runtime.
+- **Productivity tools** — keyboard shortcuts (`/` to search, `g r` to jump to the rule library, `Esc` to clear filters), saved filter presets, and one-click rule body downloads.
 - **Dark/light themes** with smooth, Motion-powered animations throughout.
 
 ## Tech stack
@@ -76,13 +79,22 @@ You'll be forced to set a new password on first login.
 
 ### Importing additional rule sources
 
-Beyond the seeded rule library, Sentriq can bulk-import rules from third-party repositories via a pluggable importer framework (`src/db/seed/importers/`). The first importer pulls the full [SigmaHQ/sigma](https://github.com/SigmaHQ/sigma) ruleset (~3,000+ rules, `rules/` + `rules-threat-hunting/`):
+Beyond the seeded rule library, Sentriq can bulk-import rules from third-party repositories via a pluggable importer framework (`src/db/seed/importers/`). Each importer is registered under an id and run via:
 
 ```bash
-npm run db:import -- sigma
+npm run db:import -- <id>
 ```
 
-Pass `--include-emerging` to also import `rules-emerging-threats/` and `rules-compliance/` (these update frequently upstream — re-run periodically to pick up changes). The import is idempotent: re-running it skips rules already present. Imported rules show a "Source & attribution" block on their detail page crediting the upstream project, original author, and license (Sigma rules are under SigmaHQ's Detection Rule License 1.1).
+| id | Source | License |
+| --- | --- | --- |
+| `sigma` | [SigmaHQ/sigma](https://github.com/SigmaHQ/sigma) (~3,000+ rules, `rules/` + `rules-threat-hunting/`) | DRL-1.1 |
+| `splunk` | [splunk/security_content](https://github.com/splunk/security_content) | Apache-2.0 |
+| `azure-sentinel` | [Azure/Azure-Sentinel](https://github.com/Azure/Azure-Sentinel) (KQL analytic rules) | MIT |
+| `falco` | [falcosecurity/rules](https://github.com/falcosecurity/rules) | Apache-2.0 |
+| `yara` | 0xN0n4m3d3v/kit-shell (YARA core rules) | CC0-1.0 |
+| `cloudflare` | mintyYuki/cf-waf-ruleset | MIT |
+
+For `sigma`, pass `--include-emerging` to also import `rules-emerging-threats/` and `rules-compliance/` (these update frequently upstream — re-run periodically to pick up changes). All imports are idempotent: re-running skips rules already present. Imported rules show a "Source & attribution" block on their detail page crediting the upstream project, original author, and license.
 
 For a Docker deployment, run the import inside the container against the persistent volume:
 
