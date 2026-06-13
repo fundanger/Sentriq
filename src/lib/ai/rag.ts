@@ -1,4 +1,4 @@
-import { eq, isNotNull } from "drizzle-orm";
+import { eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { detectionRules } from "@/db/schema";
 import { getActiveLlmProvider } from "./provider";
@@ -101,28 +101,49 @@ export async function findSimilarRules(
   const rules = await db
     .select({
       id: detectionRules.id,
-      title: detectionRules.title,
-      slug: detectionRules.slug,
-      language: detectionRules.language,
-      descriptionSummary: detectionRules.descriptionSummary,
       embedding: detectionRules.embedding,
     })
     .from(detectionRules)
     .where(isNotNull(detectionRules.embedding));
 
-  const scored = rules
+  const topIds = rules
     .filter((r) => r.id !== rule.id)
     .map((r) => ({
-      title: r.title,
-      slug: r.slug,
-      language: r.language as DetectionLanguage,
-      descriptionSummary: r.descriptionSummary,
+      id: r.id,
       score: cosineSimilarity(queryEmbedding!, r.embedding ?? []),
     }))
     .filter((r) => r.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
 
-  return scored.slice(0, topK);
+  if (topIds.length === 0) {
+    return [];
+  }
+
+  const details = await db
+    .select({
+      id: detectionRules.id,
+      title: detectionRules.title,
+      slug: detectionRules.slug,
+      language: detectionRules.language,
+      descriptionSummary: detectionRules.descriptionSummary,
+    })
+    .from(detectionRules)
+    .where(inArray(detectionRules.id, topIds.map((r) => r.id)));
+
+  const detailsById = new Map(details.map((d) => [d.id, d]));
+
+  return topIds.flatMap((r) => {
+    const d = detailsById.get(r.id);
+    if (!d) return [];
+    return [{
+      title: d.title,
+      slug: d.slug,
+      language: d.language as DetectionLanguage,
+      descriptionSummary: d.descriptionSummary,
+      score: r.score,
+    }];
+  });
 }
 
 export async function searchSimilarRules(
@@ -148,24 +169,46 @@ export async function searchSimilarRules(
 
   const rules = await db
     .select({
-      title: detectionRules.title,
-      slug: detectionRules.slug,
-      language: detectionRules.language,
-      descriptionSummary: detectionRules.descriptionSummary,
+      id: detectionRules.id,
       embedding: detectionRules.embedding,
     })
     .from(detectionRules)
     .where(isNotNull(detectionRules.embedding));
 
-  const scored = rules
+  const topIds = rules
     .map((rule) => ({
-      title: rule.title,
-      slug: rule.slug,
-      language: rule.language as DetectionLanguage,
-      descriptionSummary: rule.descriptionSummary,
+      id: rule.id,
       score: cosineSimilarity(queryEmbedding, rule.embedding ?? []),
     }))
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
 
-  return scored.slice(0, topK);
+  if (topIds.length === 0) {
+    return [];
+  }
+
+  const details = await db
+    .select({
+      id: detectionRules.id,
+      title: detectionRules.title,
+      slug: detectionRules.slug,
+      language: detectionRules.language,
+      descriptionSummary: detectionRules.descriptionSummary,
+    })
+    .from(detectionRules)
+    .where(inArray(detectionRules.id, topIds.map((r) => r.id)));
+
+  const detailsById = new Map(details.map((d) => [d.id, d]));
+
+  return topIds.flatMap((r) => {
+    const d = detailsById.get(r.id);
+    if (!d) return [];
+    return [{
+      title: d.title,
+      slug: d.slug,
+      language: d.language as DetectionLanguage,
+      descriptionSummary: d.descriptionSummary,
+      score: r.score,
+    }];
+  });
 }
