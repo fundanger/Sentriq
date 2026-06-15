@@ -22,7 +22,6 @@ import { CodeBlock } from "@/components/rules/code-block";
 import { MitreChip } from "@/components/rules/mitre-chip";
 import { CvssBadge } from "@/components/rules/cvss-badge";
 import {
-  ArrowLeft,
   Pencil,
   ShieldAlert,
   ExternalLink,
@@ -36,6 +35,7 @@ import { AskAiAboutRuleButton } from "@/components/ai/ask-ai-about-rule-button";
 import { SimilarRulesCard } from "@/components/rules/similar-rules-card";
 import { TrackRecentlyViewed } from "@/components/rules/track-recently-viewed";
 import { DeploymentsCard } from "@/components/rules/deployments-card";
+import { BackToLibraryLink } from "@/components/rules/back-to-library-link";
 import { Rocket } from "lucide-react";
 import { INTEGRATION_PLATFORMS } from "@/lib/constants";
 
@@ -120,10 +120,7 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
         categoryName={rule.primaryCategory?.name}
       />
       <div className="flex flex-col gap-3">
-        <Button variant="ghost" size="sm" className="w-fit" render={<Link href="/rules" />}>
-          <ArrowLeft />
-          Back to library
-        </Button>
+        <BackToLibraryLink />
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-2">

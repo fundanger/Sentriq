@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { DETECTION_LANGUAGES, SEVERITY_LEVELS } from "@/lib/constants";
 import { FilterPresets } from "@/components/rules/filter-presets";
+import { LIBRARY_QUERY_STORAGE_KEY } from "@/components/rules/back-to-library-link";
 
 interface Category {
   id: string;
@@ -58,6 +59,13 @@ export function RuleFilters({ categories }: { categories: Category[] }) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  // Remember the current filter/search/page state so "Back to library" can
+  // restore it after viewing a rule's detail page.
+  useEffect(() => {
+    const query = searchParams.toString();
+    sessionStorage.setItem(LIBRARY_QUERY_STORAGE_KEY, query);
+  }, [searchParams]);
 
   function handleSearchChange(value: string) {
     setSearchInput(value);
