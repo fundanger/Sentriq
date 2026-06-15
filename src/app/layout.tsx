@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, Space_Grotesk, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider, THEME_NO_FLASH_SCRIPT } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getPlatformSettings } from "@/lib/platform-settings";
 import { PLATFORM_DEFAULTS } from "@/lib/constants";
@@ -50,6 +51,11 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
+        <Script
+          id="theme-no-flash"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: THEME_NO_FLASH_SCRIPT }}
+        />
         {accentOklch && (
           <style
             // Overrides the default cyan accent with the configured branding color.
@@ -58,12 +64,7 @@ export default async function RootLayout({
             }}
           />
         )}
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider defaultTheme="dark">
           <TooltipProvider delay={200}>{children}</TooltipProvider>
         </ThemeProvider>
       </body>
