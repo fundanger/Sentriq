@@ -9,9 +9,13 @@ if [ ! -f ".env.local" ]; then
   exit 1
 fi
 
-if [ ! -d ".next" ]; then
+if [ ! -d ".next/standalone" ]; then
   echo "No production build found - running ./build.sh first."
   ./build.sh
 fi
 
-npm run start
+set -a
+source .env.local
+set +a
+
+node .next/standalone/server.js

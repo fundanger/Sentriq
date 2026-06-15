@@ -40,4 +40,9 @@ fi
 echo "Building Sentriq..."
 npm run build
 
+echo "Assembling standalone server..."
+cp -r public .next/standalone/public
+mkdir -p .next/standalone/.next
+cp -r .next/static .next/standalone/.next/static
+
 echo "Build complete. Run ./start.sh to launch Sentriq."

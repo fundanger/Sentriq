@@ -35,4 +35,9 @@ echo Building Sentriq...
 call npm run build
 if errorlevel 1 exit /b 1
 
+echo Assembling standalone server...
+xcopy /e /i /y "public" ".next\standalone\public" >nul
+if not exist ".next\standalone\.next" mkdir ".next\standalone\.next"
+xcopy /e /i /y ".next\static" ".next\standalone\.next\static" >nul
+
 echo Build complete. Run start.bat to launch Sentriq.
