@@ -48,8 +48,8 @@ export function SeverityDistributionWidget({ data }: { data: DashboardData }) {
           Rule counts by assigned severity across the library.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-48 w-full">
+      <CardContent className="flex flex-1 flex-col">
+        <ChartContainer config={chartConfig} className="h-full min-h-48 w-full">
           <BarChart data={chartData} layout="vertical" margin={{ left: 8 }}>
             <CartesianGrid horizontal={false} strokeDasharray="3 3" />
             <XAxis type="number" allowDecimals={false} hide />

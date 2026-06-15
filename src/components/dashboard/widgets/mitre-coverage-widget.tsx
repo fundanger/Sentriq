@@ -34,13 +34,13 @@ export function MitreCoverageWidget({ data }: { data: DashboardData }) {
           Top tactics by number of mapped detection rules.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-1 flex-col">
         {chartData.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No MITRE technique mappings yet.
           </p>
         ) : (
-          <ChartContainer config={chartConfig} className="h-56 w-full">
+          <ChartContainer config={chartConfig} className="h-full min-h-56 w-full">
             <BarChart data={chartData} layout="vertical" margin={{ left: 8 }}>
               <CartesianGrid horizontal={false} strokeDasharray="3 3" />
               <XAxis type="number" allowDecimals={false} hide />
