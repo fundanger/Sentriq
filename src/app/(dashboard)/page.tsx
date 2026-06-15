@@ -9,6 +9,7 @@ import { LanguageBreakdownWidget } from "@/components/dashboard/widgets/language
 import { CategoryBreakdownWidget } from "@/components/dashboard/widgets/category-breakdown-widget";
 import { RecentRulesWidget } from "@/components/dashboard/widgets/recent-rules-widget";
 import { RecentlyViewedWidget } from "@/components/dashboard/widgets/recently-viewed-widget";
+import { TriggerActivityWidget } from "@/components/dashboard/widgets/trigger-activity-widget";
 import { ChartWidgetSkeleton } from "@/components/dashboard/widgets/chart-widget-skeleton";
 import { DETECTION_LANGUAGES } from "@/lib/constants";
 
@@ -62,6 +63,7 @@ export default async function DashboardPage() {
           mitre_coverage: <MitreCoverageWidget data={data} />,
           recent_rules: <RecentRulesWidget data={data} />,
           recently_viewed: <RecentlyViewedWidget />,
+          trigger_activity: <TriggerActivityWidget data={data} />,
         }}
       />
     </div>

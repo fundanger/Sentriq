@@ -8,6 +8,7 @@ import type {
 } from "../types";
 
 const CF_API_BASE = "https://api.cloudflare.com/client/v4";
+const CF_GRAPHQL_URL = "https://api.cloudflare.com/client/v4/graphql";
 const ENTRYPOINT_PHASE = "http_request_firewall_custom";
 
 export class CloudflareAdapter implements PlatformIntegrationAdapter {
@@ -150,9 +151,74 @@ export class CloudflareAdapter implements PlatformIntegrationAdapter {
     }
   }
 
-  async getTriggerCounts(): Promise<TriggerCountResult[]> {
-    throw new Error(
-      "Trigger counts for Cloudflare WAF rules require GraphQL Analytics API access, which is not yet implemented."
-    );
+  async getTriggerCounts(remoteRuleIds: string[], since: Date): Promise<TriggerCountResult[]> {
+    if (remoteRuleIds.length === 0) return [];
+
+    const query = `
+      query SentriqFirewallEvents($zoneTag: String!, $since: Time!, $until: Time!, $ruleIds: [String!]) {
+        viewer {
+          zones(filter: { zoneTag: $zoneTag }) {
+            firewallEventsAdaptiveGroups(
+              limit: 1000
+              filter: { datetime_geq: $since, datetime_leq: $until, ruleId_in: $ruleIds }
+            ) {
+              count
+              dimensions {
+                ruleId
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await fetch(CF_GRAPHQL_URL, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({
+        query,
+        variables: {
+          zoneTag: this.zoneId,
+          since: since.toISOString(),
+          until: new Date().toISOString(),
+          ruleIds: remoteRuleIds,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Cloudflare analytics query failed (${response.status}): ${text.slice(0, 500)}`);
+    }
+
+    const data = (await response.json()) as {
+      errors?: { message: string }[];
+      data?: {
+        viewer?: {
+          zones?: {
+            firewallEventsAdaptiveGroups?: {
+              count: number;
+              dimensions: { ruleId: string };
+            }[];
+          }[];
+        };
+      };
+    };
+
+    if (data.errors?.length) {
+      throw new Error(`Cloudflare analytics query failed: ${data.errors.map((e) => e.message).join("; ")}`);
+    }
+
+    const groups = data.data?.viewer?.zones?.[0]?.firewallEventsAdaptiveGroups ?? [];
+    const countByRuleId = new Map<string, number>();
+    for (const group of groups) {
+      countByRuleId.set(group.dimensions.ruleId, (countByRuleId.get(group.dimensions.ruleId) ?? 0) + group.count);
+    }
+
+    return remoteRuleIds.map((remoteRuleId) => ({
+      remoteRuleId,
+      bucketStart: since,
+      count: countByRuleId.get(remoteRuleId) ?? 0,
+    }));
   }
 }

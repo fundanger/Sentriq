@@ -6,19 +6,23 @@ import {
   deleteIntegrationAction,
   toggleIntegrationActiveAction,
   testIntegrationConnectionAction,
+  syncTriggerCountsAction,
 } from "@/actions/integrations";
-import { Loader2, Trash2, Plug, Power } from "lucide-react";
+import { Loader2, Trash2, Plug, Power, RefreshCw } from "lucide-react";
 
 export function IntegrationActions({
   integrationId,
   isActive,
+  supportsTriggerCounts,
 }: {
   integrationId: string;
   isActive: boolean;
+  supportsTriggerCounts: boolean;
 }) {
   const [isTesting, startTest] = useTransition();
   const [isToggling, startToggle] = useTransition();
   const [isDeleting, startDelete] = useTransition();
+  const [isSyncing, startSync] = useTransition();
   const [testMessage, setTestMessage] = useState<string | null>(null);
 
   return (
@@ -49,6 +53,23 @@ export function IntegrationActions({
           {isToggling ? <Loader2 className="animate-spin" /> : <Power />}
           {isActive ? "Disable" : "Enable"}
         </Button>
+        {supportsTriggerCounts && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isSyncing}
+            onClick={() =>
+              startSync(async () => {
+                const result = await syncTriggerCountsAction(integrationId);
+                setTestMessage(result.success ?? result.error ?? null);
+              })
+            }
+          >
+            {isSyncing ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+            Sync trigger counts
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"

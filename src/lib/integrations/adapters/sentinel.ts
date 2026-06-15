@@ -9,6 +9,8 @@ import type {
 
 const ARM_BASE = "https://management.azure.com";
 const ARM_SCOPE = "https://management.azure.com/.default";
+const LOGS_API_BASE = "https://api.loganalytics.io";
+const LOGS_SCOPE = "https://api.loganalytics.io/.default";
 
 export class SentinelAdapter implements PlatformIntegrationAdapter {
   readonly platform = "sentinel" as const;
@@ -29,7 +31,7 @@ export class SentinelAdapter implements PlatformIntegrationAdapter {
     this.workspaceName = credentials.workspaceName ?? "";
   }
 
-  private async getAccessToken(): Promise<string> {
+  private async getAccessToken(scope: string = ARM_SCOPE): Promise<string> {
     const response = await fetch(
       `https://login.microsoftonline.com/${this.tenantId}/oauth2/v2.0/token`,
       {
@@ -39,7 +41,7 @@ export class SentinelAdapter implements PlatformIntegrationAdapter {
           grant_type: "client_credentials",
           client_id: this.clientId,
           client_secret: this.clientSecret,
-          scope: ARM_SCOPE,
+          scope,
         }),
       }
     );
@@ -51,6 +53,27 @@ export class SentinelAdapter implements PlatformIntegrationAdapter {
 
     const data = (await response.json()) as { access_token: string };
     return data.access_token;
+  }
+
+  /** Looks up the Log Analytics workspace's customer ID (GUID), required by the query API. */
+  private async getWorkspaceCustomerId(token: string): Promise<string> {
+    const url = `${ARM_BASE}${this.workspaceResourceId()}?api-version=2022-10-01`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Workspace lookup failed (${response.status}): ${text.slice(0, 300)}`);
+    }
+
+    const data = (await response.json()) as { properties?: { customerId?: string } };
+    const customerId = data.properties?.customerId;
+    if (!customerId) {
+      throw new Error("Workspace response did not include a customer ID.");
+    }
+
+    return customerId;
   }
 
   private workspaceResourceId(): string {
@@ -139,10 +162,46 @@ export class SentinelAdapter implements PlatformIntegrationAdapter {
     }
   }
 
-  async getTriggerCounts(): Promise<TriggerCountResult[]> {
-    throw new Error(
-      "Trigger counts for Microsoft Sentinel require a Log Analytics query against the SecurityIncident table, which is not yet implemented."
-    );
+  async getTriggerCounts(remoteRuleIds: string[], since: Date): Promise<TriggerCountResult[]> {
+    if (remoteRuleIds.length === 0) return [];
+
+    const armToken = await this.getAccessToken(ARM_SCOPE);
+    const customerId = await this.getWorkspaceCustomerId(armToken);
+    const logsToken = await this.getAccessToken(LOGS_SCOPE);
+
+    const timespan = `${since.toISOString()}/${new Date().toISOString()}`;
+    const results: TriggerCountResult[] = [];
+
+    for (const remoteRuleId of remoteRuleIds) {
+      const query = `SecurityIncident
+| where TimeGenerated >= datetime(${since.toISOString()})
+| where RelatedAnalyticRuleIds has "${remoteRuleId}"
+| summarize count()`;
+
+      const response = await fetch(
+        `${LOGS_API_BASE}/v1/workspaces/${customerId}/query`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${logsToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query, timespan }),
+        }
+      );
+
+      if (!response.ok) continue;
+
+      const data = (await response.json()) as {
+        tables?: { rows?: number[][] }[];
+      };
+
+      const count = data.tables?.[0]?.rows?.[0]?.[0] ?? 0;
+
+      results.push({ remoteRuleId, bucketStart: since, count });
+    }
+
+    return results;
   }
 }
 

@@ -18,6 +18,10 @@ const PLATFORM_LABELS: Record<string, string> = Object.fromEntries(
   INTEGRATION_PLATFORMS.map((p) => [p.value, p.label])
 );
 
+const PLATFORM_TRIGGER_SUPPORT: Record<string, boolean> = Object.fromEntries(
+  INTEGRATION_PLATFORMS.map((p) => [p.value, p.supportsTriggerCounts])
+);
+
 export default async function IntegrationsSettingsPage() {
   const session = await auth();
 
@@ -87,6 +91,7 @@ export default async function IntegrationsSettingsPage() {
                   <IntegrationActions
                     integrationId={integration.id}
                     isActive={integration.isActive}
+                    supportsTriggerCounts={PLATFORM_TRIGGER_SUPPORT[integration.platform] ?? false}
                   />
                 </div>
               ))}

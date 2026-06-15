@@ -29,6 +29,7 @@ export interface DeploymentSummary {
   statusMessage: string | null;
   remoteRuleId: string | null;
   lastSyncedAt: Date | null;
+  triggerCount: number;
 }
 
 export interface AvailableIntegration {
@@ -126,6 +127,13 @@ function DeploymentRow({
         {deployment.lastSyncedAt && (
           <span className="text-xs text-muted-foreground">
             Last synced {deployment.lastSyncedAt.toLocaleString()}
+          </span>
+        )}
+        {deployment.status === "deployed" && (
+          <span className="text-xs text-muted-foreground">
+            {deployment.triggerCount === 0
+              ? "No triggers recorded in the last 24h"
+              : `${deployment.triggerCount.toLocaleString()} trigger${deployment.triggerCount === 1 ? "" : "s"} in the last 24h`}
           </span>
         )}
         {deployment.statusMessage && (

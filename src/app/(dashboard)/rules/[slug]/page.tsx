@@ -82,7 +82,7 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
   const [ruleDeployments, activeIntegrations] = await Promise.all([
     db.query.deployments.findMany({
       where: (d, { eq }) => eq(d.ruleId, rule.id),
-      with: { integration: true },
+      with: { integration: true, triggerStats: true },
     }),
     db.query.integrations.findMany({
       where: (i, { eq }) => eq(i.isActive, true),
@@ -107,6 +107,7 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
     statusMessage: deployment.statusMessage,
     remoteRuleId: deployment.remoteRuleId,
     lastSyncedAt: deployment.lastSyncedAt,
+    triggerCount: deployment.triggerStats.reduce((sum, stat) => sum + stat.triggerCount, 0),
   }));
 
   return (

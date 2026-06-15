@@ -165,7 +165,7 @@ export const INTEGRATION_PLATFORMS: readonly IntegrationPlatformMeta[] = [
     label: "Cloudflare",
     description: "Deploy custom WAF rules to a Cloudflare zone.",
     supportedLanguages: ["cloudflare"],
-    supportsTriggerCounts: false,
+    supportsTriggerCounts: true,
     fields: [
       { key: "zoneId", label: "Zone ID", type: "text", required: true },
       { key: "apiToken", label: "API token", type: "password", required: true },

@@ -1,6 +1,14 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
-import { detectionRules, categories, mitreTechniques, ruleMitreMappings } from "@/db/schema";
+import {
+  detectionRules,
+  categories,
+  mitreTechniques,
+  ruleMitreMappings,
+  deployments,
+  ruleTriggerStats,
+  integrations,
+} from "@/db/schema";
 import type { DetectionLanguage, Severity } from "@/lib/constants";
 
 export interface DashboardData {
@@ -22,6 +30,14 @@ export interface DashboardData {
     language: DetectionLanguage;
     categoryName?: string | null;
   }[];
+  topTriggeredRules: {
+    ruleId: string;
+    ruleSlug: string;
+    ruleTitle: string;
+    language: DetectionLanguage;
+    integrationName: string;
+    triggerCount: number;
+  }[];
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
@@ -32,6 +48,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     totalRow,
     tacticCounts,
     recentRules,
+    topTriggeredRules,
   ] = await Promise.all([
     db
       .select({
@@ -73,6 +90,22 @@ export async function getDashboardData(): Promise<DashboardData> {
       limit: 6,
       with: { primaryCategory: true },
     }),
+    db
+      .select({
+        ruleId: detectionRules.id,
+        ruleSlug: detectionRules.slug,
+        ruleTitle: detectionRules.title,
+        language: detectionRules.language,
+        integrationName: integrations.name,
+        triggerCount: sql<number>`sum(${ruleTriggerStats.triggerCount})`,
+      })
+      .from(ruleTriggerStats)
+      .innerJoin(deployments, sql`${ruleTriggerStats.deploymentId} = ${deployments.id}`)
+      .innerJoin(detectionRules, sql`${deployments.ruleId} = ${detectionRules.id}`)
+      .innerJoin(integrations, sql`${deployments.integrationId} = ${integrations.id}`)
+      .groupBy(deployments.id)
+      .orderBy(sql`sum(${ruleTriggerStats.triggerCount}) desc`)
+      .limit(6),
   ]);
 
   return {
@@ -89,5 +122,15 @@ export async function getDashboardData(): Promise<DashboardData> {
       language: rule.language,
       categoryName: rule.primaryCategory?.name,
     })),
+    topTriggeredRules: topTriggeredRules
+      .filter((row) => row.triggerCount > 0)
+      .map((row) => ({
+        ruleId: row.ruleId,
+        ruleSlug: row.ruleSlug,
+        ruleTitle: row.ruleTitle,
+        language: row.language as DetectionLanguage,
+        integrationName: row.integrationName,
+        triggerCount: row.triggerCount,
+      })),
   };
 }

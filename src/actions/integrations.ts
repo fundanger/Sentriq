@@ -5,7 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { integrations, deployments, detectionRules } from "@/db/schema";
+import { integrations, deployments, detectionRules, ruleTriggerStats } from "@/db/schema";
 import { encrypt } from "@/lib/crypto";
 import { isSuperAdmin, canManageRules } from "@/lib/permissions";
 import { INTEGRATION_PLATFORMS } from "@/lib/constants";
@@ -307,6 +307,71 @@ export async function deployRuleAction(
 
     revalidatePath(`/rules/${rule.slug}`);
     return { error: `Deployment failed: ${message}` };
+  }
+}
+
+/** Fetches trigger counts from the platform for all deployed rules on this integration and records them. */
+export async function syncTriggerCountsAction(integrationId: string): Promise<IntegrationResult> {
+  const session = await auth();
+  if (!isSuperAdmin(session?.user?.role)) {
+    return { error: "You must be a super admin to sync trigger counts." };
+  }
+
+  const result = await getIntegrationAdapter(integrationId);
+  if (!result) {
+    return { error: "Integration not found." };
+  }
+
+  const { adapter, integration } = result;
+
+  const deploymentRows = await db.query.deployments.findMany({
+    where: and(eq(deployments.integrationId, integrationId), eq(deployments.status, "deployed")),
+  });
+
+  const deploymentsWithRemoteId = deploymentRows.filter(
+    (d): d is typeof d & { remoteRuleId: string } => !!d.remoteRuleId
+  );
+
+  if (deploymentsWithRemoteId.length === 0) {
+    return { error: "No deployed rules to sync for this integration." };
+  }
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const remoteIdToDeploymentId = new Map(
+    deploymentsWithRemoteId.map((d) => [d.remoteRuleId, d.id])
+  );
+
+  try {
+    const counts = await adapter.getTriggerCounts(
+      deploymentsWithRemoteId.map((d) => d.remoteRuleId),
+      since
+    );
+
+    const now = new Date();
+    for (const result of counts) {
+      const deploymentId = remoteIdToDeploymentId.get(result.remoteRuleId);
+      if (!deploymentId) continue;
+
+      await db
+        .insert(ruleTriggerStats)
+        .values({
+          deploymentId,
+          bucketStart: result.bucketStart,
+          triggerCount: result.count,
+          recordedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: [ruleTriggerStats.deploymentId, ruleTriggerStats.bucketStart],
+          set: { triggerCount: result.count, recordedAt: now },
+        });
+    }
+
+    revalidatePath("/settings/integrations");
+    revalidatePath("/");
+    return { success: `Synced trigger counts for ${counts.length} rule(s) from ${integration.name}.` };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error syncing trigger counts.";
+    return { error: `Sync failed: ${message}` };
   }
 }
 

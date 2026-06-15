@@ -26,6 +26,7 @@ const WIDGET_SPAN: Record<WidgetId, string> = {
   mitre_coverage: "lg:col-span-2",
   recent_rules: "lg:col-span-2",
   recently_viewed: "lg:col-span-2",
+  trigger_activity: "lg:col-span-2",
 };
 
 interface DashboardGridProps {

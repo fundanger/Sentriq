@@ -8,6 +8,7 @@ export const WIDGET_IDS = [
   "mitre_coverage",
   "recent_rules",
   "recently_viewed",
+  "trigger_activity",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];
@@ -20,6 +21,7 @@ export const WIDGET_TITLES: Record<WidgetId, string> = {
   mitre_coverage: "MITRE ATT&CK coverage",
   recent_rules: "Recently added",
   recently_viewed: "Recently viewed",
+  trigger_activity: "Top triggering rules",
 };
 
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardWidgetLayout[] = WIDGET_IDS.map(
