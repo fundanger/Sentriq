@@ -42,7 +42,7 @@ export function AskAiAboutRuleButton({ ruleSlug, ruleTitle, ruleLanguage }: AskA
         <DropdownMenuItem
           onClick={() =>
             ask(
-              "Explain this rule: what it detects, how it works, and any tuning guidance to reduce false positives."
+              "Explain this rule: walk through the syntax and detection logic, what it checks, and what attack behavior it flags."
             )
           }
         >

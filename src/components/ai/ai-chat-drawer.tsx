@@ -32,8 +32,15 @@ export function AiChatDrawer() {
   const sentInitialPrompt = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    // Only auto-scroll if the user is already near the bottom, so they can
+    // scroll up to read earlier messages while a response is streaming in.
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const NEAR_BOTTOM_THRESHOLD = 120;
+    if (distanceFromBottom <= NEAR_BOTTOM_THRESHOLD) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [messages]);
 
