@@ -47,4 +47,5 @@ next-env.d.ts
 
 # local AI assistant context (not part of the project)
 CLAUDE.md
+.claude/
 tmp/

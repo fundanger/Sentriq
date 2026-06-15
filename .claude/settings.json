@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "defaultMode": "bypassPermissions",
-    "allow": [
-      "Bash(npx tsc --noEmit -p tsconfig.json *)",
-      "Bash(npx eslint *)"
-    ]
-  }
-}
