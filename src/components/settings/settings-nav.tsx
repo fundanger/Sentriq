@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/settings/branding", label: "Branding", superAdminOnly: true },
   { href: "/settings/security", label: "Security", superAdminOnly: false },
   { href: "/settings/users", label: "Users", superAdminOnly: true },
+  { href: "/settings/integrations", label: "Integrations", superAdminOnly: true },
   { href: "/settings/sso", label: "SSO", superAdminOnly: true },
 ] as const;
 

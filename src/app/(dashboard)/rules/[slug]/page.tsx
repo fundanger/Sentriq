@@ -35,6 +35,9 @@ import {
 import { AskAiAboutRuleButton } from "@/components/ai/ask-ai-about-rule-button";
 import { SimilarRulesCard } from "@/components/rules/similar-rules-card";
 import { TrackRecentlyViewed } from "@/components/rules/track-recently-viewed";
+import { DeploymentsCard } from "@/components/rules/deployments-card";
+import { Rocket } from "lucide-react";
+import { INTEGRATION_PLATFORMS } from "@/lib/constants";
 
 interface RuleDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -75,6 +78,36 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
     (a, b) => a.sortOrder - b.sortOrder
   );
   const description = rule.descriptionFull ?? rule.family?.conceptDescription ?? null;
+
+  const [ruleDeployments, activeIntegrations] = await Promise.all([
+    db.query.deployments.findMany({
+      where: (d, { eq }) => eq(d.ruleId, rule.id),
+      with: { integration: true },
+    }),
+    db.query.integrations.findMany({
+      where: (i, { eq }) => eq(i.isActive, true),
+    }),
+  ]);
+
+  const platformsForLanguage = new Set(
+    INTEGRATION_PLATFORMS.filter((p) =>
+      (p.supportedLanguages as readonly string[]).includes(rule.language)
+    ).map((p) => p.value)
+  );
+
+  const availableIntegrations = activeIntegrations
+    .filter((integration) => platformsForLanguage.has(integration.platform))
+    .map((integration) => ({ id: integration.id, name: integration.name }));
+
+  const deploymentSummaries = ruleDeployments.map((deployment) => ({
+    id: deployment.id,
+    integrationId: deployment.integrationId,
+    integrationName: deployment.integration.name,
+    status: deployment.status,
+    statusMessage: deployment.statusMessage,
+    remoteRuleId: deployment.remoteRuleId,
+    lastSyncedAt: deployment.lastSyncedAt,
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -153,6 +186,10 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
           <TabsTrigger value="references">
             <BookOpen />
             References
+          </TabsTrigger>
+          <TabsTrigger value="deployments">
+            <Rocket />
+            Deployments
           </TabsTrigger>
         </TabsList>
 
@@ -399,6 +436,15 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
               </AlertDescription>
             </Alert>
           )}
+        </TabsContent>
+
+        <TabsContent value="deployments" className="mt-4">
+          <DeploymentsCard
+            ruleId={rule.id}
+            deployments={deploymentSummaries}
+            availableIntegrations={availableIntegrations}
+            canDeploy={canEdit}
+          />
         </TabsContent>
       </Tabs>
     </div>

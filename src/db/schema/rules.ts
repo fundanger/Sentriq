@@ -5,6 +5,7 @@ import { ruleMitreMappings } from "./mitre";
 import { ruleCveMappings } from "./cves";
 import { ruleReferences } from "./references";
 import { ruleSources } from "./sources";
+import { deployments } from "./integrations";
 
 export const ruleFamilies = sqliteTable("rule_families", {
   id: text("id").primaryKey(),
@@ -82,4 +83,5 @@ export const detectionRulesRelations = relations(detectionRules, ({ one, many })
   cveMappings: many(ruleCveMappings),
   references: many(ruleReferences),
   source: one(ruleSources),
+  deployments: many(deployments),
 }));

@@ -92,3 +92,85 @@ export const LLM_PROVIDERS = [
 ] as const;
 
 export type LlmProviderId = (typeof LLM_PROVIDERS)[number]["value"];
+
+interface IntegrationFieldDef {
+  key: string;
+  label: string;
+  type: "text" | "password" | "url";
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+}
+
+interface IntegrationPlatformMeta {
+  value: "sentinel" | "elastic" | "splunk" | "sentinelone" | "cloudflare";
+  label: string;
+  description: string;
+  supportedLanguages: readonly DetectionLanguage[];
+  supportsTriggerCounts: boolean;
+  fields: readonly IntegrationFieldDef[];
+}
+
+export const INTEGRATION_PLATFORMS: readonly IntegrationPlatformMeta[] = [
+  {
+    value: "sentinel",
+    label: "Microsoft Sentinel",
+    description: "Deploy KQL analytics rules to a Microsoft Sentinel workspace.",
+    supportedLanguages: ["kql"],
+    supportsTriggerCounts: true,
+    fields: [
+      { key: "tenantId", label: "Tenant ID", type: "text", required: true },
+      { key: "clientId", label: "Client ID", type: "text", required: true },
+      { key: "clientSecret", label: "Client secret", type: "password", required: true },
+      { key: "subscriptionId", label: "Subscription ID", type: "text", required: true },
+      { key: "resourceGroup", label: "Resource group", type: "text", required: true },
+      { key: "workspaceName", label: "Workspace name", type: "text", required: true },
+    ],
+  },
+  {
+    value: "elastic",
+    label: "Elastic Security",
+    description: "Deploy EQL / ES|QL detection rules to an Elastic Security instance.",
+    supportedLanguages: ["elastic"],
+    supportsTriggerCounts: true,
+    fields: [
+      { key: "kibanaUrl", label: "Kibana URL", type: "url", required: true, placeholder: "https://my-deployment.kb.us-east-1.aws.found.io" },
+      { key: "apiKey", label: "API key", type: "password", required: true },
+    ],
+  },
+  {
+    value: "splunk",
+    label: "Splunk",
+    description: "Deploy saved searches / correlation searches to Splunk via its management API.",
+    supportedLanguages: ["splunk"],
+    supportsTriggerCounts: true,
+    fields: [
+      { key: "managementUrl", label: "Management URL", type: "url", required: true, placeholder: "https://splunk.example.com:8089" },
+      { key: "token", label: "Auth token", type: "password", required: true },
+    ],
+  },
+  {
+    value: "sentinelone",
+    label: "SentinelOne",
+    description: "Deploy Deep Visibility STAR rules to a SentinelOne console.",
+    supportedLanguages: ["sentinelone"],
+    supportsTriggerCounts: true,
+    fields: [
+      { key: "consoleUrl", label: "Console URL", type: "url", required: true, placeholder: "https://usea1-partners.sentinelone.net" },
+      { key: "apiToken", label: "API token", type: "password", required: true },
+    ],
+  },
+  {
+    value: "cloudflare",
+    label: "Cloudflare",
+    description: "Deploy custom WAF rules to a Cloudflare zone.",
+    supportedLanguages: ["cloudflare"],
+    supportsTriggerCounts: false,
+    fields: [
+      { key: "zoneId", label: "Zone ID", type: "text", required: true },
+      { key: "apiToken", label: "API token", type: "password", required: true },
+    ],
+  },
+] as const;
+
+export type IntegrationPlatformId = (typeof INTEGRATION_PLATFORMS)[number]["value"];
